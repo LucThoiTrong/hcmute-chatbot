@@ -1,19 +1,31 @@
 package hcmute.edu.vn.hcmutechatbot.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class AcademicInfo {
-    private String courseName; // khoaHoc
-    private LocalDate enrollmentDate; // ngayNhapHoc
-    private String trainingType; // loaiHinhDaoTao
-    private String trainingProgram; // chuongTrinhDaoTao
-    private String faculty; // khoa
-    private String major; // nganh
-    private String academicYear; // nienKhoa
-    private String graduationYear; // namHetThoiGianDaoTao
+    private String cohort; // Khóa học
+    private LocalDate admissionDate; // Ngày nhập học
+    private String trainingType; // Hệ đào tạo (Đại trà, CLC...)
+    private String trainingProgram;
+    private String academicYear;
+    private String trainingEndYear;
+
+    // Thông tin khoa/ngành (Lưu cả ID và Name để không cần phải join)
+    private String facultyId;
+    private String facultyName;
+
+    private String majorId;
+    private String majorName;
+
+    private String specializationId;
+    private String specializationName;
 }

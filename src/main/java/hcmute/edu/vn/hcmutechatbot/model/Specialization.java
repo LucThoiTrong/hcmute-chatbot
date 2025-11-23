@@ -1,14 +1,17 @@
 package hcmute.edu.vn.hcmutechatbot.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Location {
-    private String roomName; // tenPhong
-    private String buildingName; // toaNha
-    private String facility; // coSo
+@Builder
+public class Specialization {
+
+    private String id;
+    private String name;
+    private String description;
 }

@@ -1,16 +1,20 @@
 package hcmute.edu.vn.hcmutechatbot.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class ContactInfo {
-    private String country; // quocGia
-    private String province; // tinhThanh
-    private String ward; // phuong
-    private String address; // diaChi
-    private String mobilePhone; // diDong
-    private String universityEmail; // emailTruong
-    private String personalEmail; // emailCaNhan
+    private String country;
+    private String province;
+    private String ward;
+    private String streetAddress;
+    private String mobilePhone;
+    private String schoolEmail;
+    private String personalEmail;
 }
