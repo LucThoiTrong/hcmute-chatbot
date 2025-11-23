@@ -26,32 +26,48 @@ public class JwtUtils {
     private int jwtExpirationMs;
 
     private SecretKey key() {
+        logger.info("JWT Secret Key Loaded: {}", jwtSecret);
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
-    // 1. Tạo Token
+    // Tạo Token
     public String generateJwtToken(Authentication authentication) {
         CustomUserDetails userPrincipal = (CustomUserDetails) authentication.getPrincipal();
 
         return Jwts.builder()
                 .subject(userPrincipal.getUsername())
+                .claim("id", userPrincipal.getId())
+                .claim("role", userPrincipal.getAuthorities().iterator().next().getAuthority())
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key(), Jwts.SIG.HS256)
                 .compact();
     }
 
-    // 2. Lấy Username từ Token
+    // Lấy Username từ Token
     public String getUserNameFromJwtToken(String token) {
+        return getClaimsFromToken(token).getSubject();
+    }
+
+    // Lấy Id từ Token
+    public String getIdFromJwtToken(String token) {
+        return getClaimsFromToken(token).get("id", String.class);
+    }
+
+    // Lấy Role từ Token
+    public String getRoleFromJwtToken(String token) {
+        return getClaimsFromToken(token).get("role", String.class);
+    }
+
+    private Claims getClaimsFromToken(String token) {
         return Jwts.parser()
                 .verifyWith(key())
                 .build()
                 .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+                .getPayload();
     }
 
-    // 3. Validate Token
+    // Validate Token
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parser()

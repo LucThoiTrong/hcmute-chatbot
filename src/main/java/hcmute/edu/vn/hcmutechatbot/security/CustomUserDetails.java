@@ -33,7 +33,7 @@ public class CustomUserDetails implements UserDetails {
     public static CustomUserDetails build(Account account) {
         // Chuyển Enum Role thành GrantedAuthority để spring security hiểu user có quyền gì.
         List<GrantedAuthority> authorities = Collections.singletonList(
-                new SimpleGrantedAuthority(account.getRole().name())
+                new SimpleGrantedAuthority("ROLE_" + account.getRole().name())
         );
 
         return new CustomUserDetails(
