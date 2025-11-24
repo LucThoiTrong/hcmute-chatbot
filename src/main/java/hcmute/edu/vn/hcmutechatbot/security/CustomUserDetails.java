@@ -22,6 +22,7 @@ public class CustomUserDetails implements UserDetails {
     private String id;
     private String username;
     private String ownerId;
+    private String fullName;
 
     @JsonIgnore
     private String password;
@@ -30,7 +31,7 @@ public class CustomUserDetails implements UserDetails {
     private Collection<? extends GrantedAuthority> authorities;
 
     // Method chuyển Account -> CustomUserDetails
-    public static CustomUserDetails build(Account account) {
+    public static CustomUserDetails build(Account account, String fullName) {
         // Chuyển Enum Role thành GrantedAuthority để spring security hiểu user có quyền gì.
         List<GrantedAuthority> authorities = Collections.singletonList(
                 new SimpleGrantedAuthority("ROLE_" + account.getRole().name())
@@ -40,6 +41,7 @@ public class CustomUserDetails implements UserDetails {
                 account.getId(),
                 account.getUsername(),
                 account.getOwnerId(),
+                fullName,
                 account.getPassword(),
                 authorities
         );

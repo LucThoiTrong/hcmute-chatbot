@@ -53,6 +53,7 @@ public class AuthController {
                 .token(token)
                 .id(userDetails.getId())
                 .username(userDetails.getUsername())
+                .fullName(userDetails.getFullName())
                 .ownerId(userDetails.getOwnerId())
                 .roles(roles)
                 .build()

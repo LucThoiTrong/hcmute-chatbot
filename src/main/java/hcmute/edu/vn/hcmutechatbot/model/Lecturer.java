@@ -16,7 +16,7 @@ public class Lecturer {
     @Id
     private String id;
 
-    private String name;
+    private String fullName;
 
     private String facultyId;
     private String facultyName;
