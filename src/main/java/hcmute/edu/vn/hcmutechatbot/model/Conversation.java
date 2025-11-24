@@ -11,6 +11,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Set;
 
 @Data
@@ -35,4 +36,5 @@ public class Conversation {
     private String advisoryDomainId;
 
     private Set<String> participantIds; // Lưu trữ IDs của người tham gia (human users)
+    private Map<String, String> participantStates;
 }
