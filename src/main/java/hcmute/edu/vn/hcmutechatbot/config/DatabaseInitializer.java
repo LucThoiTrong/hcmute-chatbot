@@ -275,27 +275,110 @@ public class DatabaseInitializer implements CommandLineRunner {
     // ==========================================
     // 5. DATA CHAT & TIN NHẮN
     // ==========================================
+// ==========================================
+    // 5. DATA CHAT & TIN NHẮN (FULL 15 CUỘC HỘI THOẠI)
+    // ==========================================
     private void initConversationsAndMessages() {
         LocalDateTime now = LocalDateTime.now();
+        List<Conversation> conversations = new ArrayList<>();
+        List<Message> messages = new ArrayList<>();
 
-        // Chat 1: SV IT hỏi về NCKH (Advisory - Private)
-        Conversation convResearch = Conversation.builder()
+        // --- 1. Chat Mới Nhất (Đã có sẵn) ---
+        Conversation conv1 = Conversation.builder()
                 .title("Tư vấn tham gia NCKH")
+                .type(ConversationType.ADVISORY).mode(ConversationMode.PRIVATE).status(ConversationStatus.OPEN)
+                .createdAt(now) // Mới nhất
+                .lastUpdatedAt(now)
+                .createdByUserId("22110254").facultyId("F_IT").facultyName("Khoa CNTT")
+                .advisoryDomainId("D_IT_RESEARCH").advisoryDomainName("Nghiên cứu khoa học")
+                .participantIds(Set.of("22110254", "GV_IT_02"))
+                .build();
+        conversations.add(conv1);
+        messages.add(Message.builder().conversationId(conv1.getId()).content("Em muốn tham gia nhóm NCKH về AI ạ.").senderId("22110254").senderType(SenderType.USER).sentAt(now).build());
+
+        // --- 2. Tạo thêm 14 Chat (Lùi thời gian lại để test phân trang) ---
+
+        // Chat 2: Hỏi về Đồ án tốt nghiệp (Hôm qua)
+        createChat(conversations, messages, "22110254", "GV_IT_01", "F_IT", "D_IT_ACADEMIC", "Hỏi về điều kiện làm Đồ án", now.minusDays(1));
+
+        // Chat 3: Hỏi về Thực tập (2 ngày trước)
+        createChat(conversations, messages, "22110254", "GV_IT_03", "F_IT", "D_IT_JOB", "Xin giới thiệu công ty thực tập Java", now.minusDays(2));
+
+        // Chat 4: Hỏi về Học bổng (3 ngày trước - Chat với CTSV)
+        createChat(conversations, messages, "22110254", "GV_ADMIN", "F_SA", "D_CTSV", "Điều kiện xét học bổng KKHT", now.minusDays(3));
+
+        // Chat 5: Đăng ký môn học (4 ngày trước - Đã đóng)
+        createChat(conversations, messages, "22110254", "GV_IT_01", "F_IT", "D_IT_ACADEMIC", "Lỗi không đăng ký được môn Web", now.minusDays(4));
+
+        // Chat 6: Hỏi về Bảo hiểm y tế (5 ngày trước)
+        createChat(conversations, messages, "22110254", "GV_ADMIN", "F_SA", "D_CTSV", "Gia hạn BHYT ở đâu ạ?", now.minusDays(5));
+
+        // Chat 7: Tư vấn hướng nghiệp (6 ngày trước)
+        createChat(conversations, messages, "22110254", "GV_IT_03", "F_IT", "D_IT_JOB", "Review CV fresher Frontend", now.minusDays(6));
+
+        // Chat 8: Vấn đề điểm rèn luyện (1 tuần trước)
+        createChat(conversations, messages, "22110254", "GV_ADMIN", "F_SA", "D_CTSV", "Thiếu điểm rèn luyện mục 2", now.minusWeeks(1));
+
+        // Chat 9: Sinh viên Kinh tế hỏi bài (SV Khác)
+        createChat(conversations, messages, "22110177", "GV_ECO_01", "F_ECO", "D_ECO_ACADEMIC", "Hỏi về môn Kinh tế vĩ mô", now.minusDays(8));
+
+        // Chat 10: SV Kinh tế hỏi KTX (SV Khác)
+        createChat(conversations, messages, "22110177", "GV_ADMIN", "F_SA", "D_CTSV", "Thủ tục đăng ký KTX khu B", now.minusDays(9));
+
+        // Chat 11: Hỏi về quy chế (10 ngày trước)
+        createChat(conversations, messages, "22110254", "GV_IT_01", "F_IT", "D_IT_ACADEMIC", "Quy chế học vượt tối đa bao nhiêu chỉ?", now.minusDays(10));
+
+        // Chat 12: Xin bảng điểm (11 ngày trước)
+        createChat(conversations, messages, "22110254", "GV_IT_01", "F_IT", "D_IT_ACADEMIC", "Xin cấp bảng điểm tiếng Anh", now.minusDays(11));
+
+        // Chat 13: Mất thẻ sinh viên (12 ngày trước)
+        createChat(conversations, messages, "22110254", "GV_ADMIN", "F_SA", "D_CTSV", "Thủ tục cấp lại thẻ SV", now.minusDays(12));
+
+        // Chat 14: Tuyển dụng (2 tuần trước)
+        createChat(conversations, messages, "22110254", "GV_IT_03", "F_IT", "D_IT_JOB", "Job part-time cho sinh viên năm 3", now.minusWeeks(2));
+
+        // Chat 15: Chào hỏi ban đầu (Cũ nhất)
+        createChat(conversations, messages, "22110254", "GV_IT_01", "F_IT", "D_IT_ACADEMIC", "Chào thầy, em là sinh viên mới", now.minusWeeks(3));
+
+        // Lưu tất cả vào DB
+        conversationRepository.saveAll(conversations);
+        messageRepository.saveAll(messages);
+
+        System.out.println("   -> Đã tạo: 15 Cuộc hội thoại & Tin nhắn mẫu (Phục vụ test phân trang)");
+    }
+
+    // Hàm phụ trợ để tạo Chat nhanh gọn
+    private void createChat(List<Conversation> convList, List<Message> msgList,
+                            String studentId, String lecturerId, String facultyId,
+                            String domainId, String content, LocalDateTime time) {
+
+        // Tạo Conversation ID thủ công hoặc để Mongo tự sinh (ở đây dùng UUID để link với message cho dễ trong code Java)
+        String convId = UUID.randomUUID().toString();
+
+        Conversation conv = Conversation.builder()
+                .id(convId)
+                .title(content) // Lấy nội dung tin nhắn đầu làm title luôn
                 .type(ConversationType.ADVISORY)
                 .mode(ConversationMode.PRIVATE)
-                .status(ConversationStatus.OPEN)
-                .createdAt(now)
-                .createdByUserId("21110001")
-                .facultyId("F_IT").facultyName("Khoa CNTT")
-                .advisoryDomainId("D_IT_RESEARCH").advisoryDomainName("Nghiên cứu khoa học")
-                .participantIds(Set.of("21110001", "GV_IT_02")) // SV IT & Cô Data
+                .status(ConversationStatus.CLOSED) // Đa số chat cũ thì đóng rồi
+                .createdAt(time)
+                .lastUpdatedAt(time)
+                .createdByUserId(studentId)
+                .facultyId(facultyId).facultyName("Khoa " + facultyId) // Tạm
+                .advisoryDomainId(domainId).advisoryDomainName("Lĩnh vực " + domainId) // Tạm
+                .participantIds(Set.of(studentId, lecturerId))
                 .build();
-        conversationRepository.save(convResearch);
 
-        Message msg1 = Message.builder().conversationId(convResearch.getId()).content("Em muốn tham gia nhóm NCKH về AI ạ.").senderId("21110001").senderType(SenderType.USER).sentAt(now).build();
-        messageRepository.save(msg1);
+        convList.add(conv);
 
-        System.out.println("   -> Đã tạo: Chat tư vấn NCKH");
+        // Tạo 1 tin nhắn mẫu cho hội thoại đó
+        msgList.add(Message.builder()
+                .conversationId(convId)
+                .content(content)
+                .senderId(studentId)
+                .senderType(SenderType.USER)
+                .sentAt(time)
+                .build());
     }
 
     // ==========================================

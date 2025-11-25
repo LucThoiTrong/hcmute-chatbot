@@ -11,6 +11,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,6 +26,13 @@ public class Conversation {
     private String id;
 
     private String title;
+
+    @Builder.Default
+    private Map<String, String> userTitles = new HashMap<>();
+
+    @Builder.Default
+    private Set<String> deletedByUserIds = new HashSet<>();
+
     private ConversationType type; // LOOKUP, ADVISORY
     private ConversationMode mode; // PRIVATE, PUBLIC
 
@@ -40,4 +49,13 @@ public class Conversation {
 
     private Set<String> participantIds; // Lưu trữ IDs của người tham gia (human users)
     private Map<String, String> participantStates;
+
+    // Get Title For Conversation
+    public String getTitleForUser(String userId) {
+        if (userTitles != null && userTitles.containsKey(userId)) {
+            return userTitles.get(userId);
+        }
+        return this.title;
+    }
+
 }
