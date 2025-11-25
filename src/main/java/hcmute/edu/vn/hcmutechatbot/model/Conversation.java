@@ -33,7 +33,10 @@ public class Conversation {
 
     private String createdByUserId;
     private String facultyId;
+    private String facultyName;
+
     private String advisoryDomainId;
+    private String advisoryDomainName;
 
     private Set<String> participantIds; // Lưu trữ IDs của người tham gia (human users)
     private Map<String, String> participantStates;
