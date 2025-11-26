@@ -146,4 +146,39 @@ public class NotificationService implements ISecurityService {
     // Class đơn giản để nhóm các tham số lại, giúp code clean hơn
     private record NotificationParams(Set<String> individualAndClassTargetIds, List<NotificationScope> facultyScopes) {
     }
+
+    /**
+     * Đánh dấu một thông báo cụ thể là đã đọc bởi người dùng hiện tại.
+     * @param notificationId ID của thông báo.
+     * @return Thông báo đã được cập nhật.
+     */
+    public NotificationResponse markNotificationAsRead(String notificationId) {
+        String userId = getCurrentUserId();
+        if (userId == null) {
+            throw new RuntimeException("Lỗi xác thực: Người dùng chưa đăng nhập hoặc không xác định.");
+        }
+
+        // 1. Tìm thông báo
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new NoSuchElementException("Không tìm thấy thông báo với ID: " + notificationId));
+
+        // 2. Cập nhật trạng thái đã đọc cho người dùng hiện tại
+
+        // Lấy danh sách người đã đọc
+        Set<String> readByUsers = notification.getReadByUserIds();
+
+        // Kiểm tra và thêm userId vào
+        boolean wasModified = readByUsers.add(userId);
+
+        // Chỉ lưu nếu có thay đổi
+        if (wasModified) {
+            notification.setReadByUserIds(readByUsers);
+
+            // 3. Lưu thông báo đã cập nhật
+            notification = notificationRepository.save(notification);
+        }
+
+        // 4. Chuyển đổi sang DTO và trả về
+        return notificationMapper.toResponse(notification, userId);
+    }
 }
