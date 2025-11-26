@@ -31,7 +31,7 @@ public class CourseClass {
     private String semester;     // HK1_2024_2025
     private String academicYear; // 2024-2025
 
-    // Danh sách SV trong lớp (chỉ lưu ID cho nhẹ)
+    // Danh sách SV trong lớp
     private Set<String> studentIds;
 
     // Nhúng lịch học (1 lớp có thể học nhiều buổi/tuần)

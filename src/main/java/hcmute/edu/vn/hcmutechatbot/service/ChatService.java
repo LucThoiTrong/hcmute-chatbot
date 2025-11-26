@@ -4,6 +4,7 @@ import hcmute.edu.vn.hcmutechatbot.dto.response.ConversationResponse;
 import hcmute.edu.vn.hcmutechatbot.mapper.ConversationMapper;
 import hcmute.edu.vn.hcmutechatbot.model.Conversation;
 import hcmute.edu.vn.hcmutechatbot.repository.ConversationRepository;
+import hcmute.edu.vn.hcmutechatbot.security.ISecurityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,12 +16,14 @@ import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
-public class ChatService {
+public class ChatService implements ISecurityService {
     private final ConversationRepository conversationRepository;
     private final ConversationMapper conversationMapper;
 
     // 1. Lấy danh sách chat
-    public Page<ConversationResponse> getConversationsByUserId(String userId, int page, int size) {
+    public Page<ConversationResponse> getConversationsByUserId(int page, int size) {
+        String userId = getCurrentUserId();
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("lastUpdatedAt").descending());
 
         // Truyền userId vào cả 2 tham số:
@@ -36,9 +39,11 @@ public class ChatService {
     }
 
     // 2. Hàm Patch cập nhật tiêu đề cuộc hội thoại (userTitles)
-    public ConversationResponse updateConversationTitle(String conversationId, String userId, String newTitle) {
+    public ConversationResponse updateConversationTitle(String conversationId, String newTitle) {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new RuntimeException("Conversation not found"));
+
+        String userId = getCurrentUserId();
 
         // Kiểm tra xem user có trong cuộc hội thoại không
         if (!conversation.getParticipantIds().contains(userId)) {
@@ -54,9 +59,11 @@ public class ChatService {
     }
 
     // 3. Hàm Patch cập nhật xóa mềm (deletedByUserIds)
-    public void softDeleteConversation(String conversationId, String userId) {
+    public void softDeleteConversation(String conversationId) {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new RuntimeException("Conversation not found"));
+
+        String userId = getCurrentUserId();
 
         if (conversation.getDeletedByUserIds() == null) {
             conversation.setDeletedByUserIds(new HashSet<>());
