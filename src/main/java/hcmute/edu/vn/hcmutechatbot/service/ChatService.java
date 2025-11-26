@@ -1,6 +1,7 @@
 package hcmute.edu.vn.hcmutechatbot.service;
 
 import hcmute.edu.vn.hcmutechatbot.dto.response.ConversationResponse;
+import hcmute.edu.vn.hcmutechatbot.mapper.ConversationMapper;
 import hcmute.edu.vn.hcmutechatbot.model.Conversation;
 import hcmute.edu.vn.hcmutechatbot.repository.ConversationRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.HashSet;
 @RequiredArgsConstructor
 public class ChatService {
     private final ConversationRepository conversationRepository;
+    private final ConversationMapper conversationMapper;
 
     // 1. Lấy danh sách chat
     public Page<ConversationResponse> getConversationsByUserId(String userId, int page, int size) {
@@ -30,7 +32,7 @@ public class ChatService {
                 pageable
         );
 
-        return conversationPage.map(conversation -> ConversationResponse.from(conversation, userId));
+        return conversationPage.map(conversation -> conversationMapper.toResponse(conversation, userId));
     }
 
     // 2. Hàm Patch cập nhật tiêu đề cuộc hội thoại (userTitles)
@@ -48,7 +50,7 @@ public class ChatService {
 
         Conversation updatedConversation = conversationRepository.save(conversation);
 
-        return ConversationResponse.from(updatedConversation, userId);
+        return conversationMapper.toResponse(updatedConversation, userId);
     }
 
     // 3. Hàm Patch cập nhật xóa mềm (deletedByUserIds)

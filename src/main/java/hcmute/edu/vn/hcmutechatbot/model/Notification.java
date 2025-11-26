@@ -29,4 +29,11 @@ public class Notification {
     private LocalDateTime timestamp;
     @Builder.Default
     private Set<String> readByUserIds = new HashSet<>();
+
+    public boolean checkIsRead(Notification notification, String userId) {
+        if (notification.getReadByUserIds() == null) {
+            return false;
+        }
+        return notification.getReadByUserIds().contains(userId);
+    }
 }

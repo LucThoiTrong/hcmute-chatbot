@@ -18,19 +18,5 @@ public class ConversationResponse {
     private ConversationStatus status;
     private LocalDateTime lastUpdatedAt;
     private LocalDateTime createdAt;
-
     private Set<String> participantIds;
-
-    // Helper method để map từ Entity sang DTO
-    public static ConversationResponse from(Conversation conversation, String userId) {
-        return ConversationResponse.builder()
-                .id(conversation.getId())
-                .title(conversation.getTitleForUser(userId))
-                .type(conversation.getType())
-                .status(conversation.getStatus())
-                .lastUpdatedAt(conversation.getLastUpdatedAt())
-                .createdAt(conversation.getCreatedAt())
-                .participantIds(conversation.getParticipantIds())
-                .build();
-    }
 }
