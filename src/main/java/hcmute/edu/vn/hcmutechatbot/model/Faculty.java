@@ -23,7 +23,7 @@ public class Faculty {
     private String name;
     private String description;
 
-    private FacultyType type; // ACADEMIC hoặc SERVICE
+    private FacultyType type;
 
     // Nhúng danh sách Ngành vào Khoa
     private Set<Major> majors;

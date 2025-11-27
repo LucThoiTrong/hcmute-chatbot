@@ -3,12 +3,12 @@ package hcmute.edu.vn.hcmutechatbot.dto.response;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
 public class FacultyResponse {
     private String id;
     private String name;
-    private List<AdvisoryDomainResponse> advisoryDomainResponse;
+    private Set<AdvisoryDomainResponse> advisoryDomains;
 }

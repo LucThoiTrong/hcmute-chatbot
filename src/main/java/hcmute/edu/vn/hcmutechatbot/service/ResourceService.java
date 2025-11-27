@@ -10,6 +10,7 @@ import hcmute.edu.vn.hcmutechatbot.repository.FacultyRepository;
 import hcmute.edu.vn.hcmutechatbot.repository.LecturerRepository;
 import hcmute.edu.vn.hcmutechatbot.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ResourceService {
 
     private final FacultyRepository facultyRepository;
@@ -33,7 +35,7 @@ public class ResourceService {
      */
     public List<FacultyResponse> getAllFaculties() {
         List<Faculty> faculties = facultyRepository.findAll();
-        // Sử dụng FacultyMapper để map từ Faculty (có nhúng AdvisoryDomain) sang FacultyResponse
+        log.info("faculties: {}", faculties);
         return faculties.stream()
                 .map(facultyMapper::toFacultyResponse)
                 .collect(Collectors.toList());
