@@ -1,6 +1,5 @@
 package hcmute.edu.vn.hcmutechatbot.dto.response;
 
-import hcmute.edu.vn.hcmutechatbot.model.Conversation;
 import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationStatus;
 import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationType;
 import lombok.Builder;

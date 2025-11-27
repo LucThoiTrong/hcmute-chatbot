@@ -382,16 +382,100 @@ public class DatabaseInitializer implements CommandLineRunner {
     }
 
     // ==========================================
-    // 6. DATA THÔNG BÁO
+    // 6. DATA THÔNG BÁO (15 thông báo, phân bổ 6 scope)
     // ==========================================
     private void initNotifications() {
-        Notification noti = Notification.builder()
-                .title("Thông báo nộp học phí HK2").content("Hạn chót 15/01/2024.")
-                .senderId("GV_ADMIN")
-                .scope(NotificationScope.GLOBAL)
-                .timestamp(LocalDateTime.now())
+        LocalDateTime now = LocalDateTime.now();
+        List<Notification> notifications = new ArrayList<>();
+        // Dùng biến i để lùi thời gian tạo thông báo, giúp dễ dàng kiểm tra sắp xếp
+        int i = 0;
+
+        // 1-2. GLOBAL (Chung cho tất cả - 2 thông báo)
+        notifications.add(createNotification(
+                "Thông báo nộp học phí HK2", "Hạn chót 15/01/2024. Vui lòng thanh toán qua cổng thông tin SV.",
+                "GV_ADMIN", NotificationScope.GLOBAL, null, now.minusHours(i++)));
+        notifications.add(createNotification(
+                "Lịch nghỉ Tết Nguyên Đán", "Nghỉ từ 05/02 đến 18/02/2024. Chúc mừng năm mới!",
+                "GV_ADMIN", NotificationScope.GLOBAL, null, now.minusHours(i++)));
+
+        // 3-4. FACULTY_ALL - F_IT (Chung cho cả GV & SV CNTT - 2 thông báo) - Target 22110254
+        notifications.add(createNotification(
+                "Lịch thi giữa kỳ Khoa CNTT", "Kiểm tra danh sách thi tại website Khoa. Bắt đầu từ 01/12/2023.",
+                "GV_IT_01", NotificationScope.FACULTY_ALL, "F_IT", now.minusHours(i++)));
+        notifications.add(createNotification(
+                "Workshop AI & ML", "Mời toàn bộ GV/SV Khoa CNTT tham gia workshop vào ngày 20/12/2023.",
+                "GV_IT_02", NotificationScope.FACULTY_ALL, "F_IT", now.minusHours(i++)));
+
+        // 5-6. FACULTY_STUDENT - F_IT (Chỉ SV CNTT - 2 thông báo) - Target 22110254
+        notifications.add(createNotification(
+                "Danh sách xét học bổng KKHT", "SV Khoa CNTT xem và phản hồi thắc mắc trước 10/12.",
+                "GV_ADMIN", NotificationScope.FACULTY_STUDENT, "F_IT", now.minusHours(i++)));
+        notifications.add(createNotification(
+                "Thông báo hoàn thành ĐATN", "SV khoá 2020/2021 nộp báo cáo ĐATN trước 30/12.",
+                "GV_IT_01", NotificationScope.FACULTY_STUDENT, "F_IT", now.minusHours(i++)));
+
+        // 7. FACULTY_LECTURER - F_IT (Chỉ GV CNTT - 1 thông báo)
+        notifications.add(createNotification(
+                "Họp hội đồng khoa học Khoa CNTT", "Tập trung tại phòng họp A2-205 lúc 14h00.",
+                "GV_IT_01", NotificationScope.FACULTY_LECTURER, "F_IT", now.minusHours(i++)));
+
+        // 8. FACULTY_ALL - F_ECO (Chung cho cả GV & SV Kinh tế - 1 thông báo) - Target 22110177
+        notifications.add(createNotification(
+                "Hội thảo Ngành Logistics", "Tham gia buổi gặp mặt doanh nghiệp vào 10/12.",
+                "GV_ECO_01", NotificationScope.FACULTY_ALL, "F_ECO", now.minusHours(i++)));
+
+        // 9. FACULTY_STUDENT - F_ECO (Chỉ SV Kinh tế - 1 thông báo) - Target 22110177
+        notifications.add(createNotification(
+                "Lịch đăng ký học phần bổ sung", "SV Kinh tế đăng ký đợt 2 vào ngày 25/11. Kiểm tra kĩ danh sách môn.",
+                "GV_ADMIN", NotificationScope.FACULTY_STUDENT, "F_ECO", now.minusHours(i++)));
+
+        // 10-11. CLASS - CL_JAVA_01 (Lớp Java - 2 thông báo) - Target 22110254
+        notifications.add(createNotification(
+                "Thay đổi lịch học môn Java", "Lớp CL_JAVA_01 chuyển sang học ở phòng B1-301 từ tuần sau.",
+                "GV_IT_01", NotificationScope.CLASS, "CL_JAVA_01", now.minusHours(i++)));
+        notifications.add(createNotification(
+                "Nộp bài tập lớn Java", "Hạn nộp bài tập lớn là 23h59 ngày 30/11. Lưu ý định dạng file nộp.",
+                "GV_IT_01", NotificationScope.CLASS, "CL_JAVA_01", now.minusHours(i++)));
+
+        // 12-13. INDIVIDUAL - 22110254 (Riêng cho SV này - 2 thông báo)
+        notifications.add(createNotification(
+                "Cảnh báo học vụ", "SV 22110254: Bạn cần gặp cố vấn học tập do có môn học bị điểm F.",
+                "GV_ADMIN", NotificationScope.INDIVIDUAL, "22110254", now.minusHours(i++)));
+        notifications.add(createNotification(
+                "Thư mời tham gia phỏng vấn", "Mời SV 22110254 tham gia phỏng vấn học bổng KKHT.",
+                "GV_ADMIN", NotificationScope.INDIVIDUAL, "22110254", now.minusHours(i++)));
+
+        // 14-15. INDIVIDUAL - 22110177 (Riêng cho SV này - 2 thông báo)
+        notifications.add(createNotification(
+                "Thông báo nợ học phí", "SV 22110177: Bạn đang nợ học phí HK1/2023-2024. Vui lòng thanh toán sớm.",
+                "GV_ADMIN", NotificationScope.INDIVIDUAL, "22110177", now.minusHours(i++)));
+        notifications.add(createNotification(
+                "Kết quả điểm rèn luyện", "SV 22110177: Điểm rèn luyện HK1/2023-2024 của bạn đã được công bố.",
+                "GV_ADMIN", NotificationScope.INDIVIDUAL, "22110177", now.minusHours(i)));
+
+        notificationRepository.saveAll(notifications);
+        System.out.println("   -> Đã tạo: " + notifications.size() + " Thông báo (Phân bổ đa dạng scope)");
+    }
+
+    /**
+     * Helper method to create and build a Notification object.
+     * @param title The title of the notification.
+     * @param content The main content of the notification.
+     * @param senderId The ID of the sender (e.g., GV_ADMIN, GV_IT_01).
+     * @param scope The scope of the notification (GLOBAL, CLASS, INDIVIDUAL, etc.).
+     * @param targetId The target ID, required for non-GLOBAL scopes (e.g., studentId, facultyId, courseClassId).
+     * @param timestamp The creation time of the notification.
+     * @return The built Notification object.
+     */
+    private Notification createNotification(String title, String content, String senderId,
+                                            NotificationScope scope, String targetId, LocalDateTime timestamp) {
+        return Notification.builder()
+                .title(title)
+                .content(content)
+                .senderId(senderId)
+                .scope(scope)
+                .targetId(targetId)
+                .timestamp(timestamp)
                 .build();
-        notificationRepository.save(noti);
-        System.out.println("   -> Đã tạo: Thông báo chung");
     }
 }
