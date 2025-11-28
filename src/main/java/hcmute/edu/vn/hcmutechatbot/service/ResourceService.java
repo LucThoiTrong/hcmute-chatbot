@@ -10,7 +10,6 @@ import hcmute.edu.vn.hcmutechatbot.repository.FacultyRepository;
 import hcmute.edu.vn.hcmutechatbot.repository.LecturerRepository;
 import hcmute.edu.vn.hcmutechatbot.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ResourceService {
 
     private final FacultyRepository facultyRepository;
@@ -35,7 +33,6 @@ public class ResourceService {
      */
     public List<FacultyResponse> getAllFaculties() {
         List<Faculty> faculties = facultyRepository.findAll();
-        log.info("faculties: {}", faculties);
         return faculties.stream()
                 .map(facultyMapper::toFacultyResponse)
                 .collect(Collectors.toList());
@@ -66,27 +63,20 @@ public class ResourceService {
         List<ConsultantResponse> consultants = new ArrayList<>();
 
         // 3. Tra cứu Lecturer và Student bằng consultantIds
-
-        // Giả định: IDs của Lecturer và Student không trùng nhau
-
         // Lấy Lecturers
-        List<String> lecturerIds = new ArrayList<>(consultantIds); // Giả sử tất cả IDs đều có thể là Lecturer IDs
+        List<String> lecturerIds = new ArrayList<>(consultantIds);
         lecturerRepository.findAllById(lecturerIds).stream()
                 .map(consultantMapper::toLecturerConsultantResponse)
                 .forEach(consultants::add);
-
-        // Lấy Students (Lấy những IDs còn lại hoặc tìm kiếm lại)
-        List<String> studentIds = new ArrayList<>(consultantIds); // Giả sử tất cả IDs đều có thể là Student IDs
+        // Lấy Students
+        List<String> studentIds = new ArrayList<>(consultantIds);
         studentRepository.findAllById(studentIds).stream()
                 .map(consultantMapper::toStudentConsultantResponse)
                 .forEach(consultants::add);
 
-        // LƯU Ý: Nếu một ID có thể là cả Lecturer và Student, logic này cần được điều chỉnh để phân biệt loại ID.
-        // Hiện tại, ta sẽ chấp nhận tìm kiếm ID trong cả 2 collections.
-
-        // 4. Trả về danh sách ConsultantResponses (có thể cần distinct nếu ID trùng tên)
+        // 4. Trả về danh sách ConsultantResponses
         return consultants.stream()
-                .distinct() // Đảm bảo không có trùng lặp nếu có ID trùng tên/nhầm lẫn
+                .distinct()
                 .collect(Collectors.toList());
     }
 }

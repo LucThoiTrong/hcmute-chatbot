@@ -2,7 +2,7 @@ package hcmute.edu.vn.hcmutechatbot.model;
 
 import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationType;
 import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationMode;
-import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationStatus;
+//import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,7 +37,7 @@ public class Conversation {
     private ConversationMode mode; // PRIVATE, PUBLIC
 
     private LocalDateTime createdAt;
-    private ConversationStatus status; // PENDING, OPEN, CLOSED
+//    private ConversationStatus status; // PENDING, OPEN, CLOSED
     private LocalDateTime lastUpdatedAt;
 
     private String createdByUserId;
@@ -47,6 +47,7 @@ public class Conversation {
     private String advisoryDomainId;
     private String advisoryDomainName;
 
+    private String thread_id;
     private Set<String> participantIds; // Lưu trữ IDs của người tham gia (human users)
     private Map<String, String> participantStates;
 
