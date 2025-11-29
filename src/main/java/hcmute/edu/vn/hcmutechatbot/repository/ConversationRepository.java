@@ -27,5 +27,12 @@ public interface ConversationRepository extends MongoRepository<Conversation, St
             Pageable pageable
     );
 
-    Optional<Conversation> findByThreadId(String threadId);
+    // Đếm tổng số conversation trong khoảng thời gian
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+    // Đếm tổng số conversation theo type trong khoảng thời gian
+    long countByTypeAndCreatedAtBetween(ConversationType type, LocalDateTime start, LocalDateTime end);
+
+    // Lấy danh sách conversation trong khoảng thời gian
+    List<Conversation> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }
