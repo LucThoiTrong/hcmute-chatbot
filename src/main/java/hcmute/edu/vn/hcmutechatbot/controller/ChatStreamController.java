@@ -16,13 +16,13 @@ public class ChatStreamController {
 
     private final ChatStreamService chatStreamService;
 
+    // Principal là user đã được xác thực khi connect
     @MessageMapping("/chat.stream")
     public void streamChatMessage(ChatStreamRequest request, Principal principal) {
         // Kiểm tra an toàn
         if (principal == null) {
             log.error("User chưa xác thực (Principal is null)!");
             return;
-            // Hoặc bắn tin nhắn lỗi về FE
         }
 
         // Truyền Principal xuống Service

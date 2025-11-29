@@ -41,12 +41,11 @@ public class ChatStreamService {
 
         String conversationId = request.getConversationId();
 
-
         // 2. Xử lý Conversation (Tạo mới hoặc Lấy cũ)
         boolean isNewConversation = false;
         Conversation conversation;
 
-        // Tìm conversation bằng khóa chính (ID)
+        // Tìm conversation (conversationId được gửi từ FE)
         Optional<Conversation> existingConv = conversationRepository.findById(conversationId);
 
         if (existingConv.isPresent()) {
@@ -85,32 +84,34 @@ public class ChatStreamService {
                 .conversationId(conversation.getId())
                 .content(request.getContent())
                 .senderId(userId)
-                .senderType(SenderType.STUDENT) // Giả định người dùng là STUDENT
+                .senderType(SenderType.STUDENT)
                 .sentAt(LocalDateTime.now())
                 .build();
         messageRepository.save(userMsg);
 
-        // 4. BẮN TÍN HIỆU UPDATE SIDEBAR (Chỉ khi là hội thoại mới)
+        // 4. BẮN TÍN HIỆU UPDATE SIDEBAR (Khi là cuộc hội thoại mới)
         if (isNewConversation) {
-            // Gửi một event riêng để FE biết mà thêm vào list conversation
             messagingTemplate.convertAndSendToUser(
                     userId,
                     "/queue/new-conversation",
-                    conversation // Gửi Conversation Object mới
+                    conversation
             );
         }
 
         // 5. Chuẩn bị gọi AI
         String role = user.getAuthorities().stream().findFirst().map(Object::toString).orElse("GUEST");
+
+        // Khởi tạo user_info
         Map<String, Object> userInfo = Map.of(
                 "full_name", user.getFullName(),
                 "role", role,
                 "user_id", userId
         );
 
+        // Khởi tạo đầu vào cho AI
         Map<String, Object> aiRequest = Map.of(
                 "input", request.getContent(),
-                "thread_id", conversationId, // Dùng threadId (chính là conversationId)
+                "thread_id", conversationId,
                 "user_info", userInfo
         );
 
@@ -129,18 +130,24 @@ public class ChatStreamService {
                             // A. Gửi từng chunk về cho FE hiển thị (Stream)
                             messagingTemplate.convertAndSendToUser(
                                     userId,
-                                    "/queue/stream-reply",
+                                    "/queue/stream-reply." + conversationId,
                                     token
                             );
                             fullAiResponse.append(token);
                         },
                         error -> {
                             log.error("Lỗi stream AI cho ID {}: ", conversationId, error);
-                            messagingTemplate.convertAndSendToUser(userId, "/queue/stream-reply", "[ERR_AI]");
+                            messagingTemplate.convertAndSendToUser(userId, "/queue/stream-reply." + conversationId, "[ERR_AI]");
                         },
                         () -> {
                             // C. KHI STREAM HOÀN TẤT (ON COMPLETE)
                             log.debug("Hoàn tất stream cho ID: {}", conversationId);
+
+                            messagingTemplate.convertAndSendToUser(
+                                    userId,
+                                    "/queue/stream-reply." + conversationId,
+                                    "[STREAM_END]"
+                            );
 
                             // LƯU TIN NHẮN CỦA AI VÀO DB
                             Message aiMsg = Message.builder()
