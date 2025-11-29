@@ -34,19 +34,30 @@ public class ChatService implements ISecurityService {
     private final LecturerRepository lecturerRepository;
 
     // 1. Lấy danh sách chat
-    public Page<ConversationResponse> getConversationsByUserId(int page, int size) {
+    public Page<ConversationResponse> getConversationsByUserId(int page, int size, String keyword) {
         String userId = getCurrentUserId();
 
+        // Sort theo thời gian update mới nhất
         Pageable pageable = PageRequest.of(page, size, Sort.by("lastUpdatedAt").descending());
 
-        // Truyền userId vào cả 2 tham số:
-        // - Tham số 1: Để tìm user trong danh sách tham gia
-        // - Tham số 2: Để đảm bảo user KHÔNG nằm trong danh sách đã xóa
-        Page<Conversation> conversationPage = conversationRepository.findByParticipantIdsContainsAndDeletedByUserIdsNotContains(
-                userId, // participantId
-                userId, // deletedUserId
-                pageable
-        );
+        Page<Conversation> conversationPage;
+
+        // Kiểm tra nếu keyword có dữ liệu hay không
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            // CASE 1: Có keyword -> Search
+            conversationPage = conversationRepository.findByParticipantIdsContainsAndDeletedByUserIdsNotContainsAndTitleContainingIgnoreCase(
+                    userId, // participantId
+                    userId, // deletedUserId
+                    keyword.trim(), // Xóa khoảng trắng thừa
+                    pageable
+            );
+        } else {
+            conversationPage = conversationRepository.findByParticipantIdsContainsAndDeletedByUserIdsNotContains(
+                    userId,
+                    userId,
+                    pageable
+            );
+        }
 
         return conversationPage.map(conversation -> conversationMapper.toResponse(conversation, userId));
     }

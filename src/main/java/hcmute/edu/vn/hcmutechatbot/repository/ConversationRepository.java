@@ -27,6 +27,13 @@ public interface ConversationRepository extends MongoRepository<Conversation, St
             Pageable pageable
     );
 
+    Page<Conversation> findByParticipantIdsContainsAndDeletedByUserIdsNotContainsAndTitleContainingIgnoreCase(
+            String participantId,
+            String deletedUserId,
+            String keyword,
+            Pageable pageable
+    );
+
     // Đếm tổng số conversation trong khoảng thời gian
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
