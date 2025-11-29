@@ -35,9 +35,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     // 1. Cấu hình Interceptor để chặn và check Token
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
+        // Chặn mọi message từ client gửi lên server
         registration.interceptors(new ChannelInterceptor() {
             @Override
             public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
+                // Chuyển message sang dạng StompHeaderAccessor
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
                 // Chỉ kiểm tra khi Client gửi lệnh CONNECT
@@ -60,7 +62,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                 UsernamePasswordAuthenticationToken authentication =
                                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
-                                // QUAN TRỌNG: Gán User vào phiên WebSocket
+                                // Gán User vào phiên WebSocket
                                 accessor.setUser(authentication);
                                 log.info("WebSocket Authenticated User: {}", username);
                             }
@@ -76,7 +78,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         });
     }
 
-    // 2. Cấu hình RabbitMQ (Giữ nguyên như cũ của bạn)
+    // 2. Cấu hình RabbitMQ
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableStompBrokerRelay("/topic", "/queue")
@@ -89,7 +91,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.setUserDestinationPrefix("/user");
     }
 
-    // 3. Mở cổng kết nối (Giữ nguyên)
+    // 3. Mở cổng kết nối
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
