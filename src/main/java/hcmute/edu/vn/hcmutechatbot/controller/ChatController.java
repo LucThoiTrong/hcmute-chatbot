@@ -22,10 +22,11 @@ public class ChatController {
     @GetMapping("/history")
     public ResponseEntity<Page<ConversationResponse>> getUserChatHistory(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "") String keyword
     ) {
         log.info("Get user chat history");
-        return ResponseEntity.ok(chatService.getConversationsByUserId(page, size));
+        return ResponseEntity.ok(chatService.getConversationsByUserId(page, size, keyword));
     }
 
     @PatchMapping("/{conversationId}")
