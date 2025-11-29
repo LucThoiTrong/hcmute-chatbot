@@ -2,7 +2,6 @@ package hcmute.edu.vn.hcmutechatbot.model;
 
 import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationType;
 import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationMode;
-//import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,7 +36,6 @@ public class Conversation {
     private ConversationMode mode; // PRIVATE, PUBLIC
 
     private LocalDateTime createdAt;
-//    private ConversationStatus status; // PENDING, OPEN, CLOSED
     private LocalDateTime lastUpdatedAt;
 
     private String createdByUserId;
