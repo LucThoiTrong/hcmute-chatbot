@@ -47,7 +47,7 @@ public class Conversation {
     private String advisoryDomainId;
     private String advisoryDomainName;
 
-    private String thread_id;
+    private String threadId;
     private Set<String> participantIds; // Lưu trữ IDs của người tham gia (human users)
     private Map<String, String> participantStates;
 

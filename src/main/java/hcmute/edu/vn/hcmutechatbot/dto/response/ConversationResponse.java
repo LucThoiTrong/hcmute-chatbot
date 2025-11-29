@@ -17,5 +17,6 @@ public class ConversationResponse {
     private ConversationStatus status;
     private LocalDateTime lastUpdatedAt;
     private LocalDateTime createdAt;
+    private String threadId;
     private Set<String> participantIds;
 }

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ConversationRepository extends MongoRepository<Conversation, String> {
@@ -25,4 +26,6 @@ public interface ConversationRepository extends MongoRepository<Conversation, St
             String deletedUserId,
             Pageable pageable
     );
+
+    Optional<Conversation> findByThreadId(String threadId);
 }
