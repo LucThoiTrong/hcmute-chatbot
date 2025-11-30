@@ -9,6 +9,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,8 +27,11 @@ public class Account {
     private String password;
     private String personalEmail;
     private String schoolEmail;
-    private Role role;
-    private String ownerId; // Link tới StudentId hoặc LecturerId
+
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
+
+    private String ownerId;
 
     @Builder.Default
     private boolean isActive = true;
