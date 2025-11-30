@@ -135,6 +135,11 @@ public class DatabaseInitializer implements CommandLineRunner {
     // 2. DATA USERS & ACCOUNTS
     // ==========================================
     private void initUsersAndAccounts() {
+        // Xóa data cũ để tránh lỗi conflict roles nếu chạy lại
+        lecturerRepository.deleteAll();
+        studentRepository.deleteAll();
+        accountRepository.deleteAll();
+
         List<Lecturer> lecturers = new ArrayList<>();
         List<Student> students = new ArrayList<>();
         List<Account> accounts = new ArrayList<>();
@@ -145,16 +150,26 @@ public class DatabaseInitializer implements CommandLineRunner {
         lecturers.add(Lecturer.builder().id("GV_IT_02").fullName("PGS. Trần Thị Data").facultyId("F_IT").facultyName("Khoa CNTT").build());
         lecturers.add(Lecturer.builder().id("GV_IT_03").fullName("ThS. Lê Văn Job").facultyId("F_IT").facultyName("Khoa CNTT").build());
         lecturers.add(Lecturer.builder().id("GV_ECO_01").fullName("TS. Phạm Kinh Tế").facultyId("F_ECO").facultyName("Khoa Kinh tế").build());
-        lecturers.add(Lecturer.builder().id("GV_ADMIN").fullName("Thầy Trưởng Phòng").facultyId("F_SA").facultyName("Phòng CTSV").build());
+
+        // Ông này là TRƯỞNG KHOA (Ví dụ Trưởng khoa CNTT luôn đi cho dễ test)
+        lecturers.add(Lecturer.builder().id("GV_HEAD_IT").fullName("PGS.TS Trưởng Khoa IT").facultyId("F_IT").facultyName("Khoa CNTT").build());
 
         lecturerRepository.saveAll(lecturers);
 
         for (Lecturer lec : lecturers) {
-            Role role = lec.getId().equals("GV_ADMIN") ? Role.MANAGER : Role.LECTURER;
+            // Tạo Set Roles
+            Set<Role> roles = new HashSet<>();
+            roles.add(Role.LECTURER); // Mặc định ai cũng là Giảng viên
+
+            // Nếu là ông Trưởng khoa -> Add thêm role FACULTY_HEAD
+            if (lec.getId().equals("GV_HEAD_IT")) {
+                roles.add(Role.FACULTY_HEAD);
+            }
+
             accounts.add(Account.builder()
                     .username(lec.getId().toLowerCase())
                     .password(defaultPass)
-                    .role(role)
+                    .roles(roles) // ✅ Lưu set roles
                     .ownerId(lec.getId())
                     .personalEmail(lec.getId().toLowerCase() + "@hcmute.edu.vn")
                     .build());
@@ -189,17 +204,22 @@ public class DatabaseInitializer implements CommandLineRunner {
         studentRepository.saveAll(students);
 
         for (Student stu : students) {
+            // Role sinh viên cũng phải là Set
+            Set<Role> studentRoles = new HashSet<>();
+            studentRoles.add(Role.STUDENT);
+
             accounts.add(Account.builder()
                     .username(stu.getStudentId())
                     .password(defaultPass)
-                    .role(Role.STUDENT)
+                    .roles(studentRoles) // ✅ Lưu set roles
                     .ownerId(stu.getStudentId())
                     .personalEmail(stu.getContactInfo().getPersonalEmail())
                     .build());
         }
 
         accountRepository.saveAll(accounts);
-        System.out.println("   -> Đã tạo: 5 Giảng viên, 2 Sinh viên, 7 Accounts");
+        System.out.println("   -> Đã tạo: " + lecturers.size() + " Giảng viên, " + students.size() + " Sinh viên.");
+        System.out.println("   -> Tài khoản 'gv_head_it' sẽ có 2 roles: LECTURER và FACULTY_HEAD.");
     }
 
     // ==========================================

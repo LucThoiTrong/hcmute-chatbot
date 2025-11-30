@@ -10,8 +10,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serial;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Data
@@ -32,10 +32,13 @@ public class CustomUserDetails implements UserDetails {
 
     // Method chuyển Account -> CustomUserDetails
     public static CustomUserDetails build(Account account, String fullName) {
-        // Chuyển Enum Role thành GrantedAuthority để spring security hiểu user có quyền gì.
-        List<GrantedAuthority> authorities = Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_" + account.getRole().name())
-        );
+
+        // --- SỬA LẠI ĐOẠN NÀY ---
+        // Duyệt qua list roles -> Map từng cái thành SimpleGrantedAuthority
+        List<GrantedAuthority> authorities = account.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                .collect(Collectors.toList());
+        // ------------------------
 
         return new CustomUserDetails(
                 account.getId(),
