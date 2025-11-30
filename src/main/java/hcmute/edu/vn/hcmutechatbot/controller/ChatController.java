@@ -25,7 +25,6 @@ public class ChatController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false, defaultValue = "") String keyword
     ) {
-        log.info("Get user chat history");
         return ResponseEntity.ok(chatService.getConversationsByUserId(page, size, keyword));
     }
 
