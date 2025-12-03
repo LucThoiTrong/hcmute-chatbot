@@ -1,11 +1,14 @@
 package hcmute.edu.vn.hcmutechatbot.controller;
 
+import hcmute.edu.vn.hcmutechatbot.dto.request.GoogleLoginRequest; // Import DTO mới
 import hcmute.edu.vn.hcmutechatbot.dto.request.LoginRequest;
 import hcmute.edu.vn.hcmutechatbot.dto.response.JwtResponse;
 import hcmute.edu.vn.hcmutechatbot.security.CustomUserDetails;
 import hcmute.edu.vn.hcmutechatbot.security.jwt.JwtUtils;
+import hcmute.edu.vn.hcmutechatbot.service.AuthService; // Import AuthService
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,9 +29,12 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
 
+    // [NEW] Inject AuthService để xử lý logic Google
+    private final AuthService authService;
+
+    // API Đăng nhập thường (Giữ nguyên code cũ của bạn)
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        // B1: Xác thực thông tin đăng nhập
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsername(),
@@ -36,15 +42,10 @@ public class AuthController {
                 )
         );
 
-        // B2: Nếu đăng nhập thành công
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        // B3: Sinh token
         String token = jwtUtils.generateJwtToken(authentication);
 
-        // B4: Lấy thông tin trong UserDetails để trả về token
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .toList();
@@ -58,5 +59,23 @@ public class AuthController {
                 .roles(roles)
                 .build()
         );
+    }
+
+    // [NEW] API Đăng nhập bằng Google
+    // Endpoint: POST /api/auth/google
+    @PostMapping("/google")
+    public ResponseEntity<?> authenticateGoogleUser(@RequestBody GoogleLoginRequest request) {
+        try {
+            // Gọi xuống Service để Verify token và lấy JWT hệ thống
+            JwtResponse jwtResponse = authService.loginWithGoogle(request.getToken());
+
+            // Trả về kết quả thành công (200 OK)
+            return ResponseEntity.ok(jwtResponse);
+
+        } catch (RuntimeException e) {
+            // Xử lý lỗi theo mô tả trong ảnh (Case Not Found hoặc Token lỗi)
+            // Trả về HTTP 401 Unauthorized kèm thông báo lỗi
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
     }
 }

@@ -14,47 +14,68 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
+
     private final StudentRepository studentRepository;
     private final LecturerRepository lecturerRepository;
     private final AccountRepository accountRepository;
 
+    // --- 1. ĐĂNG NHẬP BẰNG USERNAME (Login thường) ---
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // 1. Tìm Account
         Account account = accountRepository.findAccountByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
-        // 2. Logic lấy FullName dựa trên Roles và OwnerId
-        String fullName = "Unknown User";
+        return buildUserDetails(account);
+    }
 
-        if (account.getOwnerId() != null) {
-            // Lấy danh sách roles của user
-            var roles = account.getRoles();
+    // --- 2. ĐĂNG NHẬP BẰNG GOOGLE EMAIL (Login Google) ---
+    // Phục vụ cho Step 5 "User Mapping" trong sơ đồ Workflow
+    public UserDetails loadUserByGoogleEmail(String email) throws UsernameNotFoundException {
+        Account account = accountRepository.findAccountByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Email chưa được liên kết với tài khoản nào: " + email));
 
-            // CASE 1: Nếu là Sinh viên -> Tìm trong bảng Student
-            if (roles.contains(Role.STUDENT)) {
-                Student student = studentRepository.findById(account.getOwnerId()).orElse(null);
-                if (student != null) {
-                    fullName = student.getFullName();
-                }
-            }
-            // CASE 2: Nếu là Giảng viên, Trưởng khoa, hoặc Quản lý -> Tìm trong bảng Lecturer
-            // Lưu ý: Logic này giả định Manager/Faculty Head cũng nằm trong bảng Lecturer
-            else if (roles.contains(Role.LECTURER) ||
-                    roles.contains(Role.FACULTY_HEAD) ||
-                    roles.contains(Role.MANAGER)) {
+        return buildUserDetails(account);
+    }
 
-                Lecturer lecturer = lecturerRepository.findById(account.getOwnerId()).orElse(null);
-                if (lecturer != null) {
-                    fullName = lecturer.getFullName();
-                }
-            }
+    // --- 3. CORE LOGIC (Dùng chung) ---
+
+    // Hàm trung gian để build UserDetails, tránh lặp code build()
+    private CustomUserDetails buildUserDetails(Account account) {
+        String fullName = getUserFullName(account);
+        return CustomUserDetails.build(account, fullName);
+    }
+
+    // Logic nghiệp vụ xác định tên người dùng dựa trên Role
+    private String getUserFullName(Account account) {
+        if (account.getOwnerId() == null) {
+            return "Unknown User";
         }
 
-        // 3. Build CustomUserDetails
-        return CustomUserDetails.build(account, fullName);
+        Set<Role> roles = account.getRoles();
+
+        // CASE 1: Sinh viên
+        if (roles.contains(Role.STUDENT)) {
+            return studentRepository.findById(account.getOwnerId())
+                    .map(Student::getFullName)
+                    .orElse("Unknown Student");
+        }
+
+        // CASE 2: Giảng viên / Nhân sự khoa / Quản lý
+        // Gom nhóm các role thuộc bảng Lecturer lại cho gọn
+        if (roles.contains(Role.LECTURER) ||
+                roles.contains(Role.FACULTY_HEAD) ||
+                roles.contains(Role.MANAGER)) {
+
+            return lecturerRepository.findById(account.getOwnerId())
+                    .map(Lecturer::getFullName)
+                    .orElse("Unknown Lecturer");
+        }
+
+        return "Unknown User";
     }
 }
