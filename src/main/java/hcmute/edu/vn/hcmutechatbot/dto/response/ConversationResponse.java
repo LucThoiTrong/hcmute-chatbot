@@ -17,4 +17,6 @@ public class ConversationResponse {
     private LocalDateTime createdAt;
     private String threadId;
     private Set<String> participantIds;
+
+    private boolean isUnread;
 }

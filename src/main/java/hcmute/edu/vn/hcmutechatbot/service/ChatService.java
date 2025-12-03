@@ -59,7 +59,28 @@ public class ChatService implements ISecurityService {
             );
         }
 
-        return conversationPage.map(conversation -> conversationMapper.toResponse(conversation, userId));
+        return conversationPage.map(conversation -> {
+            boolean isUnread = false;
+
+            // 1. Query lấy tin nhắn mới nhất của cuộc hội thoại này
+            Message latestMessage = messageRepository.findFirstByConversationIdOrderBySentAtDesc(conversation.getId()).orElse(null);
+
+            if (latestMessage != null) {
+                // Lấy ID tin nhắn mà user đã đọc lần cuối.
+                String lastReadMsgId = "";
+                if (conversation.getParticipantStates() != null) {
+                    lastReadMsgId = conversation.getParticipantStates().getOrDefault(userId, "");
+                }
+
+                String latestMsgId = latestMessage.getId();
+                // 1. ID tin mới nhất KHÁC tin đã đọc
+                // 2. VÀ Người gửi tin mới nhất KHÔNG PHẢI là chính mình (Mình gửi thì ko tính là unread)
+                if (!latestMsgId.equals(lastReadMsgId) && !latestMessage.getSenderId().equals(userId)) {
+                    isUnread = true;
+                }
+            }
+            return conversationMapper.toResponse(conversation, userId, isUnread);
+        });
     }
 
     // 2. Hàm Patch cập nhật tiêu đề cuộc hội thoại (userTitles)
@@ -79,7 +100,7 @@ public class ChatService implements ISecurityService {
 
         Conversation updatedConversation = conversationRepository.save(conversation);
 
-        return conversationMapper.toResponse(updatedConversation, userId);
+        return conversationMapper.toDetailResponse(updatedConversation, userId);
     }
 
     // 3. Hàm Patch cập nhật xóa mềm (deletedByUserIds)
@@ -114,6 +135,29 @@ public class ChatService implements ISecurityService {
         // 3. Query DB lấy tin nhắn (Sắp xếp MỚI NHẤT lên đầu để lazy load đúng chuẩn)
         Pageable pageable = PageRequest.of(page, size, Sort.by("sentAt").descending());
         Page<Message> messagePage = messageRepository.findByConversationId(conversationId, pageable);
+
+        // CẬP NHẬT TRẠNG THÁI ĐÃ ĐỌC (MARK AS READ)
+        // Mục đích: Để khi user quay ra danh sách chat, chấm xanh (unread) sẽ biến mất.
+        // Điều kiện: Chỉ update khi user đang xem trang đầu tiên (tin mới nhất) và có tin nhắn.
+        if (page == 0 && messagePage.hasContent()) {
+            Message latestMsg = messagePage.getContent().getFirst();
+            String latestMsgId = latestMsg.getId();
+
+            // Khởi tạo map nếu chưa có (Null Safety)
+            if (conversation.getParticipantStates() == null) {
+                conversation.setParticipantStates(new HashMap<>());
+            }
+            Map<String, String> states = conversation.getParticipantStates();
+
+            // Lấy ID tin nhắn đã đọc hiện tại trong DB
+            String currentReadId = states.getOrDefault(userId, "");
+
+            if (!latestMsgId.equals(currentReadId)) {
+                states.put(userId, latestMsgId);
+                conversationRepository.save(conversation);
+            }
+        }
+        // =========================================================================
 
         // --- BẮT ĐẦU LOGIC TRA CỨU TÊN ĐA BẢNG (OPTIMIZED) ---
 
@@ -174,6 +218,6 @@ public class ChatService implements ISecurityService {
         }
 
         // 3. Map sang DTO (Lúc này DTO sẽ có threadId)
-        return conversationMapper.toResponse(conversation, userId);
+        return conversationMapper.toDetailResponse(conversation, userId);
     }
 }
