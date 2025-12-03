@@ -45,7 +45,7 @@ public class ChatRealtimeService {
 
         // 3. Cập nhật thời gian tương tác cuối
         conversation.setLastUpdatedAt(LocalDateTime.now());
-        conversationRepository.save(conversation);
+        Conversation updatedConversation = conversationRepository.save(conversation);
 
         // 4. Xác định SenderType
         SenderType senderType = SenderType.STUDENT;
@@ -61,6 +61,18 @@ public class ChatRealtimeService {
 
         // 6. Gửi tin nhắn ra kênh topic chung
         messagingTemplate.convertAndSend("/topic/chat." + conversationId, messageMapper.toResponse(savedMessage, user.getFullName()));
+
+        // 7. Gửi tín hiệu update sidebar cho các thành viên khác của cuộc hội thoại.
+        Set<String> participantIds = updatedConversation.getParticipantIds();
+        if (participantIds != null) {
+            for (String participantId : participantIds) {
+                messagingTemplate.convertAndSendToUser(
+                        participantId,
+                        "/queue/conversation-updates",
+                        updatedConversation
+                );
+            }
+        }
 
         log.info("User {} sent message to room {}", userId, conversationId);
     }
