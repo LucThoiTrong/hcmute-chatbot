@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // Nên thêm Transactional
 
 import java.time.Instant;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -92,5 +93,13 @@ public class RefreshTokenService {
                 .refreshToken(newRefreshToken)
                 .username(username)
                 .build();
+    }
+
+    // --- HÀM XÓA TOKEN KHI LOGOUT ---
+    @Transactional
+    public void deleteByToken(String token) {
+        // Tìm token, nếu có thì xóa
+        Optional<RefreshToken> refreshToken = refreshTokenRepository.findByToken(token);
+        refreshToken.ifPresent(refreshTokenRepository::delete);
     }
 }
