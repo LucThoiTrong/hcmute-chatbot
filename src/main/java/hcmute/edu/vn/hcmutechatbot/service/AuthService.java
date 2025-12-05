@@ -2,64 +2,52 @@ package hcmute.edu.vn.hcmutechatbot.service;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import hcmute.edu.vn.hcmutechatbot.dto.response.JwtResponse;
+import hcmute.edu.vn.hcmutechatbot.mapper.AuthMapper; // [MỚI]
 import hcmute.edu.vn.hcmutechatbot.security.CustomUserDetails;
 import hcmute.edu.vn.hcmutechatbot.security.jwt.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final GoogleAuthService googleAuthService;          // 1. Để verify token
-    private final CustomUserDetailsService customUserDetailsService; // 2. Để load user (Code bạn đã có)
-    private final JwtUtils jwtUtils;                            // 3. Để tạo token hệ thống
+    private final GoogleAuthService googleAuthService;
+    private final CustomUserDetailsService customUserDetailsService;
+    private final JwtUtils jwtUtils;
+
+    // [MỚI] Inject thêm 2 bean này
+    private final RefreshTokenService refreshTokenService;
+    private final AuthMapper authMapper;
 
     public JwtResponse loginWithGoogle(String googleToken) {
-        // BƯỚC 1: Verify Token với Google (Dùng GoogleAuthService đã có)
+        // B1: Verify Token
         GoogleIdToken.Payload payload = googleAuthService.verifyToken(googleToken);
-
         if (payload == null) {
             throw new RuntimeException("Token Google không hợp lệ hoặc đã hết hạn!");
         }
 
-        String email = payload.getEmail();
+        // B2: Load User
+        UserDetails userDetails = customUserDetailsService.loadUserByGoogleEmail(payload.getEmail());
+        CustomUserDetails customUserDetails = (CustomUserDetails) userDetails;
 
-        // BƯỚC 2: Load User từ DB (Dùng hàm loadUserByGoogleEmail trong CustomUserDetailsService)
-        // Nếu không tìm thấy user, hàm này sẽ tự throw Exception như bạn đã viết
-        UserDetails userDetails = customUserDetailsService.loadUserByGoogleEmail(email);
-
-        // BƯỚC 3: Tạo đối tượng Authentication (Set Context để Spring Security biết user đã login)
+        // B3: Set Authentication
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                userDetails,
-                null,
-                userDetails.getAuthorities()
+                userDetails, null, userDetails.getAuthorities()
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // BƯỚC 4: Sinh JWT của hệ thống (System Token)
-        String token = jwtUtils.generateJwtToken(authentication);
+        // B4: Sinh Access Token
+        String accessToken = jwtUtils.generateJwtToken(authentication);
 
-        // BƯỚC 5: Trả về kết quả (Giống login thường)
-        CustomUserDetails customUserDetails = (CustomUserDetails) userDetails;
-        List<String> roles = customUserDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
+        // [MỚI] B5: Sinh & Lưu Refresh Token
+        String refreshToken = refreshTokenService.createRefreshToken(customUserDetails.getId(), customUserDetails.getUsername());
 
-        return JwtResponse.builder()
-                .token(token)
-                .id(customUserDetails.getId())
-                .username(customUserDetails.getUsername())
-                .fullName(customUserDetails.getFullName())
-                .ownerId(customUserDetails.getOwnerId())
-                .roles(roles)
-                .build();
+        // [MỚI] B6: Dùng Mapper để trả về kết quả đồng bộ với Login thường
+        return authMapper.toJwtResponse(accessToken, refreshToken, customUserDetails);
     }
 }

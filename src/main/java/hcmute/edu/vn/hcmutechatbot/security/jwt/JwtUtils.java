@@ -16,21 +16,34 @@ import java.util.Date;
 
 @Component
 public class JwtUtils {
-    // Dùng để log lỗi, debug, thông báo trạng thái khi validate token.
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    @Value("${app.jwtSecret}")
-    private String jwtSecret;
+    @Value("${app.JWT_ACCESS_KEY}")
+    private String accessKey;
 
-    @Value("${app.jwtExpirationMs}")
-    private int jwtExpirationMs;
+    @Value("${app.JWT_ACCESS_ExpirationMs}")
+    private int accessKeyExpirationMs;
 
-    private SecretKey key() {
-        logger.info("JWT Secret Key Loaded: {}", jwtSecret);
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    @Value("${app.JWT_REFRESH_KEY}")
+    private String refreshKey;
+
+    @Value("${app.JWT_REFRESH_ExpirationMs}")
+    private int refreshKeyExpirationMs;
+
+    // ================== KEY MANAGEMENT ==================
+
+    // Key dành riêng cho Access Token
+    private SecretKey getAccessTokenKey() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessKey));
     }
 
-    // Tạo Token
+    // Key dành riêng cho Refresh Token (MỚI)
+    private SecretKey getRefreshTokenKey() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(refreshKey));
+    }
+
+    // ================== ACCESS TOKEN LOGIC ==================
+
     public String generateJwtToken(Authentication authentication) {
         CustomUserDetails userPrincipal = (CustomUserDetails) authentication.getPrincipal();
 
@@ -39,39 +52,67 @@ public class JwtUtils {
                 .claim("id", userPrincipal.getId())
                 .claim("role", userPrincipal.getAuthorities().iterator().next().getAuthority())
                 .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key(), Jwts.SIG.HS256)
+                .expiration(new Date((new Date()).getTime() + accessKeyExpirationMs))
+                .signWith(getAccessTokenKey(), Jwts.SIG.HS256) // Dùng Access Key
                 .compact();
     }
 
-    // Lấy Username từ Token
     public String getUserNameFromJwtToken(String token) {
-        return getClaimsFromToken(token).getSubject();
-    }
-
-    // Lấy Id từ Token
-    public String getIdFromJwtToken(String token) {
-        return getClaimsFromToken(token).get("id", String.class);
-    }
-
-    // Lấy Role từ Token
-    public String getRoleFromJwtToken(String token) {
-        return getClaimsFromToken(token).get("role", String.class);
-    }
-
-    private Claims getClaimsFromToken(String token) {
         return Jwts.parser()
-                .verifyWith(key())
+                .verifyWith(getAccessTokenKey())
                 .build()
                 .parseSignedClaims(token)
-                .getPayload();
+                .getPayload()
+                .getSubject();
     }
 
-    // Validate Token
     public boolean validateJwtToken(String authToken) {
+        return validateToken(authToken, getAccessTokenKey());
+    }
+
+    // ================== REFRESH TOKEN LOGIC (MỚI) ==================
+
+    /**
+     * Tạo Refresh Token
+     * Thường Refresh Token chỉ cần chứa Username (Subject) để định danh,
+     * không cần chứa quá nhiều claim như role hay id vì nó chỉ dùng để xin cấp lại token.
+     */
+    public String generateRefreshToken(String username) {
+        return Jwts.builder()
+                .subject(username)
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + refreshKeyExpirationMs))
+                .signWith(getRefreshTokenKey(), Jwts.SIG.HS256) // Quan trọng: Dùng Refresh Key
+                .compact();
+    }
+
+    /**
+     * Lấy Username từ Refresh Token
+     * Dùng để tìm user trong DB khi thực hiện renew token
+     */
+    public String getUserNameFromRefreshToken(String token) {
+        return Jwts.parser()
+                .verifyWith(getRefreshTokenKey()) // Verify bằng Refresh Key
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+    }
+
+    /**
+     * Validate Refresh Token
+     */
+    public boolean validateRefreshToken(String authToken) {
+        return validateToken(authToken, getRefreshTokenKey());
+    }
+
+    // ================== COMMON HELPERS ==================
+
+    // Hàm validate chung để tránh viết lặp code try-catch
+    private boolean validateToken(String authToken, SecretKey secretKey) {
         try {
             Jwts.parser()
-                    .verifyWith(key())
+                    .verifyWith(secretKey)
                     .build()
                     .parseSignedClaims(authToken);
             return true;
@@ -83,7 +124,7 @@ public class JwtUtils {
             logger.error("JWT token is unsupported: {}", e.getMessage());
         } catch (IllegalArgumentException e) {
             logger.error("JWT claims string is empty: {}", e.getMessage());
-        } catch (SignatureException e) { // Bắt thêm lỗi chữ ký sai
+        } catch (SignatureException e) {
             logger.error("Invalid JWT signature: {}", e.getMessage());
         }
         return false;
