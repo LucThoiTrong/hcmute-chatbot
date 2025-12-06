@@ -129,14 +129,20 @@ public class AuthController {
         }
     }
 
-    // --- 4. LOGOUT ---
+    // --- 4. API LOGOUT XÓA DB + XÓA COOKIE ---
     @PostMapping("/logout")
-    public ResponseEntity<?> logoutUser() {
+    public ResponseEntity<?> logoutUser(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
+        // 1. Xóa Token trong Database (Nếu client có gửi cookie lên)
+        if (refreshToken != null && !refreshToken.isEmpty()) {
+            refreshTokenService.deleteByToken(refreshToken);
+        }
+
+        // 2. Tạo Cookie "chết" (0 giây) để trình duyệt xóa cookie cũ
         ResponseCookie cleanCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(false) // Đổi thành true nếu chạy production (HTTPS)
                 .path("/")
-                .maxAge(0)
+                .maxAge(0) // Xóa ngay lập tức
                 .build();
 
         return ResponseEntity.ok()

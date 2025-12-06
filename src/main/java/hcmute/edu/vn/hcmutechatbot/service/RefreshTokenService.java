@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // Nên thêm Transactional
 
 import java.time.Instant;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -94,6 +95,14 @@ public class RefreshTokenService {
                 .build();
     }
 
+    // --- HÀM XÓA TOKEN KHI LOGOUT ---
+    @Transactional
+    public void deleteByToken(String token) {
+        // Tìm token, nếu có thì xóa
+        Optional<RefreshToken> refreshToken = refreshTokenRepository.findByToken(token);
+        refreshToken.ifPresent(refreshTokenRepository::delete);
+    }
+
     /**
      * [MỚI] XÓA TẤT CẢ TOKEN CỦA 1 USER
      * Dùng khi: Đổi mật khẩu, Quên mật khẩu (Force Logout All Devices)
@@ -102,4 +111,5 @@ public class RefreshTokenService {
     public void deleteByAccountId(String accountId) {
         refreshTokenRepository.deleteByAccountId(accountId);
     }
+
 }
