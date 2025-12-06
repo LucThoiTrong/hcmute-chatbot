@@ -1,7 +1,9 @@
 package hcmute.edu.vn.hcmutechatbot.controller;
 
+import hcmute.edu.vn.hcmutechatbot.dto.request.ForgotPasswordRequest;
 import hcmute.edu.vn.hcmutechatbot.dto.request.GoogleLoginRequest;
 import hcmute.edu.vn.hcmutechatbot.dto.request.LoginRequest;
+import hcmute.edu.vn.hcmutechatbot.dto.request.ResetPasswordRequest;
 import hcmute.edu.vn.hcmutechatbot.dto.response.JwtResponse;
 import hcmute.edu.vn.hcmutechatbot.mapper.AuthMapper;
 import hcmute.edu.vn.hcmutechatbot.security.CustomUserDetails;
@@ -66,6 +68,30 @@ public class AuthController {
                     .body(jwtResponse);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+    }
+
+    // --- 2.1 QUÊN MẬT KHẨU (GỬI EMAIL) ---
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        try {
+            // Gọi service để tìm user, tạo token và gửi email
+            authService.processForgotPassword(request.getEmail());
+            return ResponseEntity.ok("Link đặt lại mật khẩu đã được gửi vào email của bạn (nếu tồn tại)!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // --- 2.2 ĐẶT LẠI MẬT KHẨU ---
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        try {
+            // Gọi service để verify token và update mật khẩu mới
+            authService.processResetPassword(request.getToken(), request.getNewPassword());
+            return ResponseEntity.ok("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
