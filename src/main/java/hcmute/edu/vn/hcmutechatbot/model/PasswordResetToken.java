@@ -26,5 +26,6 @@ public class PasswordResetToken {
     @DBRef // Liên kết sang bảng Account
     private Account account;
 
+    @Indexed(expireAfter = "0s")
     private Instant expiryDate; // Thời gian hết hạn
 }
