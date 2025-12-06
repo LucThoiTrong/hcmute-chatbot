@@ -23,6 +23,7 @@ public class CustomUserDetails implements UserDetails {
     private String username;
     private String ownerId;
     private String fullName;
+    private String facultyId;
 
     @JsonIgnore
     private String password;
@@ -31,7 +32,7 @@ public class CustomUserDetails implements UserDetails {
     private Collection<? extends GrantedAuthority> authorities;
 
     // Method chuyển Account -> CustomUserDetails
-    public static CustomUserDetails build(Account account, String fullName) {
+    public static CustomUserDetails build(Account account, String fullName, String facultyId) {
 
         // --- SỬA LẠI ĐOẠN NÀY ---
         // Duyệt qua list roles -> Map từng cái thành SimpleGrantedAuthority
@@ -45,6 +46,7 @@ public class CustomUserDetails implements UserDetails {
                 account.getUsername(),
                 account.getOwnerId(),
                 fullName,
+                facultyId,
                 account.getPassword(),
                 authorities
         );

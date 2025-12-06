@@ -17,6 +17,7 @@ public class Lecturer {
     private String id;
 
     private String fullName;
+    private String email;
 
     private String facultyId;
     private String facultyName;

@@ -22,6 +22,7 @@ public interface AuthMapper {
     @Mapping(target = "fullName", source = "userDetails.fullName")
     @Mapping(target = "ownerId", source = "userDetails.ownerId")
     @Mapping(target = "roles", source = "userDetails.authorities", qualifiedByName = "mapAuthoritiesToRoles")
+    @Mapping(target = "facultyId", source = "userDetails.facultyId")
     JwtResponse toJwtResponse(String accessToken, String refreshToken, CustomUserDetails userDetails);
 
     // CASE 2: REFRESH TOKEN (Sửa target="token" thành target="accessToken")
@@ -33,6 +34,7 @@ public interface AuthMapper {
     @Mapping(target = "fullName", ignore = true)
     @Mapping(target = "ownerId", ignore = true)
     @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "facultyId", ignore = true)
     JwtResponse toJwtResponse(String accessToken, String refreshToken);
 
     @Named("mapAuthoritiesToRoles")
