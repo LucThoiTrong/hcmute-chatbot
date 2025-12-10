@@ -46,8 +46,44 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     // Hàm trung gian để build UserDetails, tránh lặp code build()
     private CustomUserDetails buildUserDetails(Account account) {
+        // 1. Lấy FullName
         String fullName = getUserFullName(account);
-        return CustomUserDetails.build(account, fullName);
+
+        // 2. [MỚI] Lấy FacultyId theo logic từng Role
+        String facultyId = getUserFacultyId(account);
+
+        // 3. Truyền cả 2 vào hàm build
+        return CustomUserDetails.build(account, fullName, facultyId);
+    }
+
+    private String getUserFacultyId(Account account) {
+        if (account.getOwnerId() == null) return "ALL";
+
+        Set<Role> roles = account.getRoles();
+
+        // CASE 1: Sinh viên -> Lấy trong academicInfo
+        if (roles.contains(Role.STUDENT)) {
+            return studentRepository.findById(account.getOwnerId())
+                    .map(student -> {
+                        // Check null cho an toàn
+                        if (student.getAcademicInfo() != null) {
+                            return student.getAcademicInfo().getFacultyId();
+                        }
+                        return "ALL";
+                    })
+                    .orElse("ALL");
+        }
+
+        // CASE 2: Giảng viên -> Lấy trực tiếp
+        if (roles.contains(Role.LECTURER) ||
+                roles.contains(Role.FACULTY_HEAD)) {
+
+            return lecturerRepository.findById(account.getOwnerId())
+                    .map(Lecturer::getFacultyId)
+                    .orElse("ALL");
+        }
+
+        return "ALL";
     }
 
     // Logic nghiệp vụ xác định tên người dùng dựa trên Role

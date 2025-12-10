@@ -1,122 +1,97 @@
 package hcmute.edu.vn.hcmutechatbot.service;
 
-import hcmute.edu.vn.hcmutechatbot.dto.response.AdvisoryTrendResponse;
-import hcmute.edu.vn.hcmutechatbot.dto.response.FacultyStatisticResponse;
-import hcmute.edu.vn.hcmutechatbot.model.Conversation;
-import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationType;
+import hcmute.edu.vn.hcmutechatbot.dto.response.LecturerStatResponse;
+import hcmute.edu.vn.hcmutechatbot.dto.response.TopicStatResponse;
+import hcmute.edu.vn.hcmutechatbot.model.Lecturer;
 import hcmute.edu.vn.hcmutechatbot.repository.ConversationRepository;
+import hcmute.edu.vn.hcmutechatbot.repository.LecturerRepository;
+import hcmute.edu.vn.hcmutechatbot.security.ISecurityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class DashboardService {
+public class DashboardService implements ISecurityService {
 
     private final ConversationRepository conversationRepository;
+    private final LecturerRepository lecturerRepository;
 
-    public List<AdvisoryTrendResponse> getTop5AdvisoryTrends(Integer month, Integer year) {
+    private String getCurrentFacultyId() {
+        // 1. Lấy ID user từ token/session (qua ISecurityService)
+        String userId = getCurrentUserId();
 
-        LocalDateTime startDate;
-        LocalDateTime endDate;
+        // 2. Query DB Lecturer để tìm thông tin giảng viên
+        Lecturer lecturer = lecturerRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy giảng viên với ID: " + userId));
 
-        int targetYear = (year != null) ? year : LocalDateTime.now().getYear();
-
-        if (month != null && month > 0 && month <= 12) {
-            // CASE 1: LỌC THEO THÁNG CỤ THỂ
-            YearMonth yearMonth = YearMonth.of(targetYear, month);
-            startDate = yearMonth.atDay(1).atStartOfDay(); // Ngày 1 lúc 00:00:00
-            endDate = yearMonth.atEndOfMonth().atTime(23, 59, 59); // Ngày cuối lúc 23:59:59
-        } else {
-            // CASE 2: LẤY CẢ NĂM (ALL 12 THÁNG)
-            startDate = LocalDateTime.of(targetYear, 1, 1, 0, 0, 0);
-            endDate = LocalDateTime.of(targetYear, 12, 31, 23, 59, 59);
+        // 3. Lấy Faculty ID
+        if (lecturer.getFacultyId() == null) {
+            throw new RuntimeException("Giảng viên chưa thuộc về Khoa nào.");
         }
-
-        // 2. QUERY DATABASE (Lọc Type + Thời gian ngay tại DB cho nhẹ)
-        List<Conversation> conversations = conversationRepository.findByTypeAndCreatedAtBetween(
-                ConversationType.ADVISORY,
-                startDate,
-                endDate
-        );
-
-        // 3. XỬ LÝ JAVA STREAM
-        return conversations.stream()
-                .collect(Collectors.groupingBy(Conversation::getAdvisoryDomainId))
-                .values().stream()
-                .map(group -> {
-                    Conversation firstItem = group.getFirst();
-
-                    String dName = firstItem.getAdvisoryDomainName() != null ? firstItem.getAdvisoryDomainName() : "Unknown";
-                    String fName = firstItem.getFacultyName() != null ? firstItem.getFacultyName() : "Unknown";
-
-                    return AdvisoryTrendResponse.builder()
-                            .advisoryDomainName(dName)
-                            .facultyName(fName)
-                            .count((long) group.size())
-                            .build();
-                })
-                .sorted((o1, o2) -> Long.compare(o2.getCount(), o1.getCount()))
-                .limit(5)
-                .collect(Collectors.toList());
+        return lecturer.getFacultyId();
     }
 
-    public long countTotalConversations(Integer month, Integer year) {
-        LocalDateTime[] range = getDateRange(month, year);
-        return conversationRepository.countByCreatedAtBetween(range[0], range[1]);
+    // --- Chức năng 1: Count số sinh viên (Distinct) ---
+    public long countTotalStudentsForMyFaculty() {
+        String facultyId = getCurrentFacultyId();
+        Long count = conversationRepository.countDistinctStudentsByFaculty(facultyId);
+        return count != null ? count : 0L; // Aggregation trả null nếu không có data
     }
 
-    public List<FacultyStatisticResponse> getConversationStatsByFaculty(Integer month, Integer year) {
-        LocalDateTime[] range = getDateRange(month, year);
-
-        // Lấy hết conversation trong khoảng thời gian
-        List<Conversation> conversations = conversationRepository.findByCreatedAtBetween(range[0], range[1]);
-
-        // Group theo Faculty Name và Count
-        Map<String, Long> stats = conversations.stream()
-                .collect(Collectors.groupingBy(
-                        c -> c.getFacultyName() != null ? c.getFacultyName() : "Chưa xác định",
-                        Collectors.counting()
-                ));
-
-        // Map sang DTO Response
-        return stats.entrySet().stream()
-                .map(entry -> FacultyStatisticResponse.builder()
-                        .facultyName(entry.getKey())
-                        .count(entry.getValue())
-                        .build())
-                .sorted((o1, o2) -> Long.compare(o2.getCount(), o1.getCount())) // Sort giảm dần
-                .collect(Collectors.toList());
+    // --- Chức năng 2: Count tổng số cuộc hội thoại ---
+    public long countTotalConversationsForMyFaculty() {
+        String facultyId = getCurrentFacultyId();
+        return conversationRepository.countByFacultyId(facultyId);
     }
 
-    public long countLookupConversations(Integer month, Integer year) {
-        LocalDateTime[] range = getDateRange(month, year);
-
-        return conversationRepository.countByTypeAndCreatedAtBetween(
-                ConversationType.LOOKUP,
-                range[0],
-                range[1]
-        );
-    }
-
-    private LocalDateTime[] getDateRange(Integer month, Integer year) {
-        int targetYear = (year != null) ? year : LocalDateTime.now().getYear();
-        LocalDateTime startDate;
-        LocalDateTime endDate;
-
-        if (month != null && month > 0 && month <= 12) {
-            YearMonth yearMonth = YearMonth.of(targetYear, month);
-            startDate = yearMonth.atDay(1).atStartOfDay();
-            endDate = yearMonth.atEndOfMonth().atTime(23, 59, 59);
-        } else {
-            startDate = LocalDateTime.of(targetYear, 1, 1, 0, 0, 0);
-            endDate = LocalDateTime.of(targetYear, 12, 31, 23, 59, 59);
+    public List<TopicStatResponse> getTopTopicsForMyFaculty() {
+        String facultyId = getCurrentFacultyId();
+        // 1. Lấy dữ liệu thô từ Aggregation
+        List<TopicStatResponse> topics = conversationRepository.getTopTrendingTopics(facultyId);
+        if (topics.isEmpty()) {
+            return topics;
         }
-        return new LocalDateTime[]{startDate, endDate};
+        // 2. Tính tổng số cuộc hội thoại để tính %
+        long totalConversations = conversationRepository.countByFacultyId(facultyId);
+        // 3. Tính percent
+        if (totalConversations > 0) {
+            topics.forEach(topic -> {
+                double rawPercent = ((double) topic.getCount() / totalConversations) * 100;
+                // Làm tròn 1 chữ số thập phân (VD: 35.5)
+                topic.setPercent(Math.round(rawPercent * 10.0) / 10.0);
+            });
+        }
+        return topics;
+    }
+
+    // Trong class DashboardService
+    public Page<LecturerStatResponse> getLecturersList(String keyword, int page, int size) {
+        String facultyId = getCurrentFacultyId();
+
+        // 1. Phân trang & Sort theo tên
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("fullName").ascending());
+
+        // 2. Query DB
+        String searchKey = (keyword == null) ? "" : keyword.trim();
+        Page<Lecturer> lecturerPage = lecturerRepository.findByFacultyIdAndFullNameContainingIgnoreCase(facultyId, searchKey, pageable);
+
+        // 3. Map sang DTO
+        return lecturerPage.map(lecturer -> {
+            // Đếm số chat
+            long chatCount = conversationRepository.countByParticipantIdsContains(lecturer.getId());
+
+            return LecturerStatResponse.builder()
+                    .id(lecturer.getId())
+                    .fullName(lecturer.getFullName())
+                    .email(lecturer.getEmail())
+                    .totalChats(chatCount)
+                    .build();
+        });
     }
 }
