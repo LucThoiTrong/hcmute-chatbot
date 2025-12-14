@@ -167,7 +167,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             }
 
             accounts.add(Account.builder()
-                    .username(lec.getId().toLowerCase())
+                    .username(lec.getId())
                     .password(defaultPass)
                     .roles(roles) // ✅ Lưu set roles
                     .ownerId(lec.getId())

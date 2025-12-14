@@ -181,4 +181,20 @@ public class NotificationService implements ISecurityService {
         // 4. Chuyển đổi sang DTO và trả về
         return notificationMapper.toResponse(notification, userId);
     }
+
+    // --- 3. [MỚI] Xem lịch sử thông báo ĐÃ GỬI (Chỉ dành cho Trưởng khoa) ---
+    // Đã xóa method deleteNotification theo yêu cầu
+    public Page<NotificationResponse> getSentNotifications(int page, int size) {
+        String userId = getCurrentUserId();
+        if (userId == null) return Page.empty();
+
+        // Sắp xếp mới nhất lên đầu
+        Pageable pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
+
+        // Tìm kiếm theo senderId (người gửi)
+        Page<Notification> notifications = notificationRepository.findBySenderId(userId, pageable);
+
+        return notifications.map(notification -> notificationMapper.toResponse(notification, userId));
+    }
+
 }
