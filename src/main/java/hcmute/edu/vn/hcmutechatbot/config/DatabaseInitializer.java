@@ -151,9 +151,6 @@ public class DatabaseInitializer implements CommandLineRunner {
         lecturers.add(Lecturer.builder().id("GV_IT_03").fullName("ThS. Lê Văn Job").facultyId("F_IT").facultyName("Khoa CNTT").build());
         lecturers.add(Lecturer.builder().id("GV_ECO_01").fullName("TS. Phạm Kinh Tế").facultyId("F_ECO").facultyName("Khoa Kinh tế").build());
 
-        // Ông này là TRƯỞNG KHOA (Ví dụ Trưởng khoa CNTT luôn đi cho dễ test)
-        lecturers.add(Lecturer.builder().id("GV_HEAD_IT").fullName("PGS.TS Trưởng Khoa IT").facultyId("F_IT").facultyName("Khoa CNTT").build());
-
         lecturerRepository.saveAll(lecturers);
 
         for (Lecturer lec : lecturers) {
@@ -161,8 +158,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             Set<Role> roles = new HashSet<>();
             roles.add(Role.LECTURER); // Mặc định ai cũng là Giảng viên
 
-            // Nếu là ông Trưởng khoa -> Add thêm role FACULTY_HEAD
-            if (lec.getId().equals("GV_HEAD_IT")) {
+            if (lec.getId().equals("GV_IT_01")) {
                 roles.add(Role.FACULTY_HEAD);
             }
 
@@ -181,7 +177,7 @@ public class DatabaseInitializer implements CommandLineRunner {
         Student s1 = Student.builder()
                 .studentId(STUDENT_IT_ID).fullName("Lục Thới Trọng").birthDate(LocalDate.of(2003, 5, 20))
                 .gender(Gender.MALE).citizenId("079000000001")
-                .contactInfo(ContactInfo.builder().mobilePhone("0901234567").personalEmail("sv_it@gmail.com").build())
+                .contactInfo(ContactInfo.builder().mobilePhone("0901234567").personalEmail("lucthoitrong@gmail.com").build())
                 .academicInfo(AcademicInfo.builder()
                         .cohort("2021").admissionDate(LocalDate.of(2021, 9, 5))
                         .facultyId("F_IT").facultyName("Khoa CNTT").majorId("M_IT").majorName("Công nghệ Thông tin")
