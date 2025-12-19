@@ -13,6 +13,7 @@ public class NotificationResponse {
     private String title;
     private String content;
     private String senderId;
+    private String senderName;
     private NotificationScope scope;
     private String targetId;
     private LocalDateTime timestamp;
