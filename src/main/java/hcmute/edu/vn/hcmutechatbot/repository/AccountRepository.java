@@ -5,6 +5,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -14,4 +16,6 @@ public interface AccountRepository extends MongoRepository<Account, String> {
     // Tìm user có personalEmail HOẶC schoolEmail trùng khớp
     @Query("{ '$or': [ { 'personalEmail': ?0 }, { 'schoolEmail': ?0 } ] }")
     Optional<Account> findAccountByEmail(String email);
+
+    List<Account> findByOwnerIdIn(Collection<String> ownerIds);
 }

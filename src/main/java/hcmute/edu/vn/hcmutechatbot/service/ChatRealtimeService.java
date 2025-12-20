@@ -2,11 +2,16 @@ package hcmute.edu.vn.hcmutechatbot.service;
 
 import hcmute.edu.vn.hcmutechatbot.dto.request.ChatRealtimeRequest;
 import hcmute.edu.vn.hcmutechatbot.mapper.MessageMapper;
+import hcmute.edu.vn.hcmutechatbot.model.Account; // [NEW]
 import hcmute.edu.vn.hcmutechatbot.model.Conversation;
+import hcmute.edu.vn.hcmutechatbot.model.Lecturer;
 import hcmute.edu.vn.hcmutechatbot.model.Message;
+import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationMode;
 import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationType;
 import hcmute.edu.vn.hcmutechatbot.model.enums.SenderType;
+import hcmute.edu.vn.hcmutechatbot.repository.AccountRepository; // [NEW]
 import hcmute.edu.vn.hcmutechatbot.repository.ConversationRepository;
+import hcmute.edu.vn.hcmutechatbot.repository.LecturerRepository;
 import hcmute.edu.vn.hcmutechatbot.repository.MessageRepository;
 import hcmute.edu.vn.hcmutechatbot.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +22,11 @@ import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,80 +35,158 @@ public class ChatRealtimeService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
+    private final LecturerRepository lecturerRepository;
+    private final AccountRepository accountRepository; // [NEW] Inject thêm cái này
     private final MessageMapper messageMapper;
 
     public void sendMessage(ChatRealtimeRequest request, Principal principal) {
-
-        log.info("Participants: {}", request.getParticipantIds());
-
-        // 1. Lấy thông tin User hiện tại
         UsernamePasswordAuthenticationToken auth = (UsernamePasswordAuthenticationToken) principal;
         CustomUserDetails user = (CustomUserDetails) auth.getPrincipal();
         String userId = user.getUsername();
-
         String conversationId = request.getId();
 
-        // 2. XỬ LÝ CONVERSATION (Tìm hoặc Tạo mới)
-        Conversation conversation = conversationRepository.findById(conversationId).orElseGet(() -> createNewConversation(request, userId));
+        // 1. Tìm hoặc tạo mới hội thoại
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseGet(() -> createNewConversation(request, userId));
 
-        // 3. Cập nhật thời gian tương tác cuối
         conversation.setLastUpdatedAt(LocalDateTime.now());
+
+        // [LOGIC MỚI] Đồng bộ giảng viên nếu là Public Chat
+        if (conversation.getMode() == ConversationMode.PUBLIC) {
+            ensureAllLecturersInConversation(conversation);
+        }
+
         Conversation updatedConversation = conversationRepository.save(conversation);
 
-        // 4. Xác định SenderType
+        // ... (Phần logic lưu message giữ nguyên như cũ) ...
         SenderType senderType = SenderType.STUDENT;
-        String role = user.getAuthorities().stream().findFirst().map(Object::toString).orElse("");
-        if (role.contains("LECTURER") || role.contains("FACULTY_HEAD")) {
+        String roles = user.getAuthorities().toString();
+        if (roles.contains("LECTURER") || roles.contains("FACULTY_HEAD")) {
             senderType = SenderType.LECTURER;
         }
 
-        // 5. Lưu tin nhắn vào DB
-        Message message = Message.builder().conversationId(conversationId).content(request.getContent()).senderId(userId).senderType(senderType).sentAt(LocalDateTime.now()).build();
+        Message message = Message.builder()
+                .conversationId(conversationId)
+                .content(request.getContent())
+                .senderId(userId)
+                .senderType(senderType)
+                .sentAt(LocalDateTime.now())
+                .build();
 
         Message savedMessage = messageRepository.save(message);
 
-        // 6. Gửi tin nhắn ra kênh topic chung
-        messagingTemplate.convertAndSend("/topic/chat." + conversationId, messageMapper.toResponse(savedMessage, user.getFullName()));
+        messagingTemplate.convertAndSend("/topic/chat." + conversationId,
+                messageMapper.toResponse(savedMessage, user.getFullName()));
 
-        // 7. Gửi tín hiệu update sidebar cho các thành viên khác của cuộc hội thoại.
         Set<String> participantIds = updatedConversation.getParticipantIds();
         if (participantIds != null) {
             for (String participantId : participantIds) {
-                messagingTemplate.convertAndSendToUser(
-                        participantId,
-                        "/queue/conversation-updates",
-                        updatedConversation
-                );
+                if (!participantId.equals(userId)) {
+                    messagingTemplate.convertAndSendToUser(
+                            participantId,
+                            "/queue/conversation-updates",
+                            updatedConversation
+                    );
+                }
+            }
+        }
+    }
+
+    // --- Helper 1: Tạo mới hội thoại ---
+    private Conversation createNewConversation(ChatRealtimeRequest request, String creatorId) {
+        log.info("Creating NEW conversation: {}", request.getId());
+
+        Set<String> participants = request.getParticipantIds();
+        if (participants == null) participants = new HashSet<>();
+        participants.add(creatorId);
+
+        // [LOGIC QUAN TRỌNG]: Lấy username giảng viên từ Account
+        if (request.getMode() == ConversationMode.PUBLIC && request.getFacultyId() != null) {
+            List<String> lecturerUsernames = getLecturerUsernamesByFaculty(request.getFacultyId());
+            if (!lecturerUsernames.isEmpty()) {
+                participants.addAll(lecturerUsernames);
+                log.info("Added {} lecturers (usernames) to Public Chat", lecturerUsernames.size());
             }
         }
 
-        log.info("User {} sent message to room {}", userId, conversationId);
-    }
-
-    // --- Helper: Logic tạo mới cuộc hội thoại ---
-    private Conversation createNewConversation(ChatRealtimeRequest request, String creatorId) {
-        log.info("Creating NEW conversation from Realtime Socket: {}", request.getId());
-
-        // Xử lý danh sách người tham gia
-        Set<String> participants = request.getParticipantIds();
-        if (participants == null) participants = new HashSet<>();
-        participants.add(creatorId); // Đảm bảo người tạo có mặt
-
-        // Tạo title mặc định
         String defaultTitle = "Tư vấn hỗ trợ";
         if (request.getType() == ConversationType.ADVISORY && request.getFacultyName() != null) {
             defaultTitle = "Tư vấn - " + request.getFacultyName();
         }
 
-        Conversation newConv = Conversation.builder().id(request.getId()).title(defaultTitle).type(request.getType()).mode(request.getMode()).facultyId(request.getFacultyId()).facultyName(request.getFacultyName()).advisoryDomainId(request.getAdvisoryDomainId()).advisoryDomainName(request.getAdvisoryDomainName()).participantIds(participants).createdByUserId(creatorId).createdAt(LocalDateTime.now()).lastUpdatedAt(LocalDateTime.now()).build();
+        Conversation newConv = Conversation.builder()
+                .id(request.getId())
+                .title(defaultTitle)
+                .type(request.getType())
+                .mode(request.getMode())
+                .facultyId(request.getFacultyId())
+                .facultyName(request.getFacultyName())
+                .advisoryDomainId(request.getAdvisoryDomainId())
+                .advisoryDomainName(request.getAdvisoryDomainName())
+                .participantIds(participants)
+                .createdByUserId(creatorId)
+                .createdAt(LocalDateTime.now())
+                .lastUpdatedAt(LocalDateTime.now())
+                .build();
 
         Conversation savedConv = conversationRepository.save(newConv);
 
-        // Xử lý logic cho những người tham gia hội thoại update có cuộc hội thoại mới
+        // Gửi thông báo socket
         for (String participantId : participants) {
-            messagingTemplate.convertAndSendToUser(participantId, "/queue/new-conversation", savedConv);
+            if (!participantId.equals(creatorId)) {
+                messagingTemplate.convertAndSendToUser(participantId, "/queue/new-conversation", savedConv);
+            }
+        }
+        return savedConv;
+    }
+
+    // --- Helper 2: Đồng bộ danh sách giảng viên ---
+    private void ensureAllLecturersInConversation(Conversation conversation) {
+        if (conversation.getFacultyId() == null) return;
+
+        // Gọi hàm helper tách biệt để lấy List Username chuẩn
+        List<String> allLecturerUsernames = getLecturerUsernamesByFaculty(conversation.getFacultyId());
+
+        Set<String> currentParticipants = conversation.getParticipantIds();
+        if (currentParticipants == null) currentParticipants = new HashSet<>();
+
+        boolean changed = false;
+        for (String username : allLecturerUsernames) {
+            if (!currentParticipants.contains(username)) {
+                currentParticipants.add(username);
+                changed = true;
+            }
         }
 
-        return savedConv;
+        if (changed) {
+            conversation.setParticipantIds(currentParticipants);
+        }
+    }
+
+    // --- Helper 3: Hàm cốt lõi để map từ Faculty -> Lecturer -> Account -> Username ---
+    private List<String> getLecturerUsernamesByFaculty(String facultyId) {
+        try {
+            // Bước 1: Lấy tất cả Lecturer thuộc khoa (chỉ chứa profile, id...)
+            List<Lecturer> lecturers = lecturerRepository.findByFacultyId(facultyId);
+
+            if (lecturers.isEmpty()) return Collections.emptyList();
+
+            // Bước 2: Lấy danh sách ID của Lecturer (để đem đi tìm trong bảng Account)
+            List<String> lecturerIds = lecturers.stream()
+                    .map(Lecturer::getId)
+                    .collect(Collectors.toList());
+
+            // Bước 3: Tìm Account dựa trên ownerId (ownerId chính là lecturerId)
+            List<Account> accounts = accountRepository.findByOwnerIdIn(lecturerIds);
+
+            // Bước 4: Lấy Username từ Account
+            return accounts.stream()
+                    .map(Account::getUsername)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("Error fetching lecturer usernames for faculty: {}", facultyId, e);
+            return Collections.emptyList();
+        }
     }
 }
