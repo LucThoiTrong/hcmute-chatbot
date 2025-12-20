@@ -1,5 +1,6 @@
 package hcmute.edu.vn.hcmutechatbot.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationType;
 import lombok.Builder;
 import lombok.Data;
@@ -18,5 +19,6 @@ public class ConversationResponse {
     private String threadId;
     private Set<String> participantIds;
 
+    @JsonProperty("isUnread")
     private boolean isUnread;
 }
