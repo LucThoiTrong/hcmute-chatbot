@@ -26,4 +26,3 @@ EXPOSE 8080
 
 # Lệnh chạy app
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
