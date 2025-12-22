@@ -33,7 +33,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final JwtUtils jwtUtils;
     private final CustomUserDetailsService userDetailsService;
 
-    @Value("${app.rabbitmq.host}")
+    @Value("${spring.rabbitmq.host}")
     private String rabbitHost;
 
     // 1. Cấu hình Interceptor để chặn và check Token
