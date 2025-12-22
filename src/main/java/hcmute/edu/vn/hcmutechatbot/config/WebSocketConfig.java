@@ -2,6 +2,7 @@ package hcmute.edu.vn.hcmutechatbot.config;
 
 import hcmute.edu.vn.hcmutechatbot.security.jwt.JwtUtils;
 import hcmute.edu.vn.hcmutechatbot.service.CustomUserDetailsService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtUtils jwtUtils;
     private final CustomUserDetailsService userDetailsService;
+
+    @Value("${app.rabbitmq.host}")
+    private String rabbitHost;
 
     // 1. Cấu hình Interceptor để chặn và check Token
     @Override
@@ -82,7 +86,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableStompBrokerRelay("/topic", "/queue")
-                .setRelayHost("localhost")
+                .setRelayHost(rabbitHost)
                 .setRelayPort(61613)
                 .setClientLogin("guest")
                 .setClientPasscode("guest");
