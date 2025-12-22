@@ -49,7 +49,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         // 1. Lấy FullName
         String fullName = getUserFullName(account);
 
-        // 2. [MỚI] Lấy FacultyId theo logic từng Role
+        // 2. Lấy FacultyId theo logic từng Role
         String facultyId = getUserFacultyId(account);
 
         // 3. Truyền cả 2 vào hàm build

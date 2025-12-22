@@ -36,7 +36,7 @@ public class ChatRealtimeService {
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final LecturerRepository lecturerRepository;
-    private final AccountRepository accountRepository; // [NEW] Inject thêm cái này
+    private final AccountRepository accountRepository;
     private final MessageMapper messageMapper;
 
     public void sendMessage(ChatRealtimeRequest request, Principal principal) {

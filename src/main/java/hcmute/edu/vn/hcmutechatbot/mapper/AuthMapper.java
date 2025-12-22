@@ -13,7 +13,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface AuthMapper {
 
-    // CASE 1: LOGIN (Sửa target="token" thành target="accessToken")
+    // CASE 1: LOGIN
     @Mapping(target = "accessToken", source = "accessToken")
     @Mapping(target = "refreshToken", source = "refreshToken")
     @Mapping(target = "type", constant = "Bearer")
@@ -25,7 +25,7 @@ public interface AuthMapper {
     @Mapping(target = "facultyId", source = "userDetails.facultyId")
     JwtResponse toJwtResponse(String accessToken, String refreshToken, CustomUserDetails userDetails);
 
-    // CASE 2: REFRESH TOKEN (Sửa target="token" thành target="accessToken")
+    // CASE 2: REFRESH TOKEN
     @Mapping(target = "accessToken", source = "accessToken")
     @Mapping(target = "refreshToken", source = "refreshToken")
     @Mapping(target = "type", constant = "Bearer")

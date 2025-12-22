@@ -25,16 +25,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class AuthService {
-
     private final GoogleAuthService googleAuthService;
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtUtils jwtUtils;
-
-    // Inject thêm 2 bean này
     private final RefreshTokenService refreshTokenService;
     private final AuthMapper authMapper;
-
-    // Inject thêm các Bean cần thiết cho Forgot Password
     private final AccountRepository accountRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;

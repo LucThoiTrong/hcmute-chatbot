@@ -96,7 +96,7 @@ public class RefreshTokenService {
     }
 
     /**
-     * [MỚI] XÓA TẤT CẢ TOKEN CỦA 1 USER
+     * XÓA TẤT CẢ TOKEN CỦA 1 USER
      * Dùng khi: Đổi mật khẩu, Quên mật khẩu (Force Logout All Devices)
      */
     @Transactional // Quan trọng: Để đảm bảo việc xóa diễn ra an toàn
