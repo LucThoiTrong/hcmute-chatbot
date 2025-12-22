@@ -4,6 +4,7 @@ import hcmute.edu.vn.hcmutechatbot.model.*;
 import hcmute.edu.vn.hcmutechatbot.model.enums.*;
 import hcmute.edu.vn.hcmutechatbot.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,7 @@ import java.util.*;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DatabaseInitializer implements CommandLineRunner {
 
     // --- Repositories ---
@@ -53,6 +55,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             // Đã xoá bước 5 (Chat) và 6 (Notification)
 
             System.out.println("✅ KHỞI TẠO DỮ LIỆU HOÀN TẤT!");
+            log.info("✅ KHỞI TẠO DỮ LIỆU HOÀN TẤT!");
         }
     }
 
@@ -129,6 +132,7 @@ public class DatabaseInitializer implements CommandLineRunner {
 
         facultyRepository.saveAll(List.of(facultyIT, facultyEco, officeStudent));
         System.out.println("   -> Đã tạo: Khoa CNTT, Khoa Kinh tế, Phòng CTSV");
+        log.info("  -> Đã tạo: Khoa CNTT, Khoa Kinh tế, Phòng CTSV");
     }
 
     // ==========================================
@@ -216,6 +220,8 @@ public class DatabaseInitializer implements CommandLineRunner {
         accountRepository.saveAll(accounts);
         System.out.println("   -> Đã tạo: " + lecturers.size() + " Giảng viên, " + students.size() + " Sinh viên.");
         System.out.println("   -> Tài khoản 'gv_head_it' sẽ có 2 roles: LECTURER và FACULTY_HEAD.");
+        log.info("   -> Đã tạo: " + lecturers.size() + " Giảng viên, " + students.size() + " Sinh viên.");
+        log.info("   -> Tài khoản 'gv_head_it' sẽ có 2 roles: LECTURER và FACULTY_HEAD.");
     }
 
     // ==========================================
@@ -348,6 +354,7 @@ public class DatabaseInitializer implements CommandLineRunner {
         enrollmentRepository.saveAll(enrollments);
 
         System.out.println("   -> Đã tạo: 10 Lớp học & Điểm số (Trải dài 2023-2026)");
+        log.info("-> Đã tạo: 10 Lớp học & Điểm số (Trải dài 2023-2026)");
     }
 
     private void createClassAndEnrollment(List<CourseClass> classes, List<StudentEnrollment> enrollments,
