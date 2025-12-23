@@ -87,7 +87,8 @@ public class AuthService {
         passwordResetTokenRepository.save(resetToken);
 
         // 5. Gửi mail
-        String link = "http://localhost:5173/reset-password?token=" + tokenString;
+//        String link = "http://localhost:5173/reset-password?token=" + tokenString;
+        String link = "https://hcmuteassistant.dpdns.org/reset-password?token=" + tokenString;
         // GỬI MAIL THẬT
         emailService.sendResetPasswordEmail(email, link);
     }
