@@ -16,7 +16,6 @@ public class ConversationResponse {
     private ConversationType type;
     private LocalDateTime lastUpdatedAt;
     private LocalDateTime createdAt;
-    private String threadId;
     private Set<String> participantIds;
 
     @JsonProperty("isUnread")

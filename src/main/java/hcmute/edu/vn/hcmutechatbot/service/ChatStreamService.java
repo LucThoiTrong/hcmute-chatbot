@@ -66,7 +66,6 @@ public class ChatStreamService {
 
             conversation = Conversation.builder()
                     .id(conversationId)
-                    .threadId(conversationId)
                     .title(autoTitle)
                     .createdByUserId(userId)
                     .createdAt(LocalDateTime.now())
