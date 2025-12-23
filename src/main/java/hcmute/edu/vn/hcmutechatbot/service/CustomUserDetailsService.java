@@ -27,7 +27,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Account account = accountRepository.findAccountByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("Tên đăng nhập không tồn tại trong hệ thống"));
 
         return buildUserDetails(account);
     }
@@ -35,7 +35,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     // --- 2. ĐĂNG NHẬP BẰNG GOOGLE EMAIL (Login Google) ---
     public UserDetails loadUserByGoogleEmail(String email) throws UsernameNotFoundException {
         Account account = accountRepository.findAccountByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Email chưa được liên kết với tài khoản nào: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException("Tài khoản Google chưa được đăng ký trong hệ thống"));
 
         return buildUserDetails(account);
     }
