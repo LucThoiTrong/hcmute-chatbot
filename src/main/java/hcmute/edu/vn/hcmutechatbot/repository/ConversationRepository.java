@@ -2,8 +2,6 @@ package hcmute.edu.vn.hcmutechatbot.repository;
 
 import hcmute.edu.vn.hcmutechatbot.dto.response.TopicStatResponse;
 import hcmute.edu.vn.hcmutechatbot.model.Conversation;
-import hcmute.edu.vn.hcmutechatbot.model.Faculty;
-import hcmute.edu.vn.hcmutechatbot.model.enums.ConversationType;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
@@ -11,7 +9,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
