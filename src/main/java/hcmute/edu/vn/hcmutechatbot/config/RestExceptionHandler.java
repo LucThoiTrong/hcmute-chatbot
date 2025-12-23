@@ -77,38 +77,28 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    // Bắt lỗi refresh token
     @ExceptionHandler(TokenRefreshException.class)
     public ResponseEntity<Object> handleTokenRefreshException(TokenRefreshException ex) {
-        return buildForbiddenResponse(ex.getMessage());
+        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    // Bắt lỗi quyền truy cập
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Object> handleAccessDeniedException(
-            AccessDeniedException ex) {
-        return buildForbiddenResponse(ex.getMessage());
+    public ResponseEntity<Object> handleAccessDeniedException(AccessDeniedException ex) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    // Bắt lỗi dữ liệu đầu vào
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<Object> handleBadRequestException(BadRequestException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Bad Request");
-        body.put("message", ex.getMessage());
-
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    private ResponseEntity<Object> buildForbiddenResponse(String message) {
+    private ResponseEntity<Object> buildErrorResponse(HttpStatus status, String message) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.FORBIDDEN.value());
-        body.put("error", HttpStatus.FORBIDDEN.getReasonPhrase());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
         body.put("message", message);
 
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+        return ResponseEntity.status(status).body(body);
     }
 }
