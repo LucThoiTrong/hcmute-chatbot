@@ -20,6 +20,7 @@ public class AuthEntryPointJwt implements AuthenticationEntryPoint {
     // Dùng để log lỗi, debug, thông báo trạng thái khi validate token.
     private static final Logger logger = LoggerFactory.getLogger(AuthEntryPointJwt.class);
 
+    // Custom lỗi xác thực người dùng gửi về cho FE
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
             throws IOException, ServletException {

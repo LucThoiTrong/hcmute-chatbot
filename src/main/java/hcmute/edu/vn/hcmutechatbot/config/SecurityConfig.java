@@ -51,16 +51,20 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
-                .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Nếu có lỗi xác thực => Dùng lớp AuthEntryPointJwt xử lý
+                .exceptionHandling(exception ->
+                        exception.authenticationEntryPoint(unauthorizedHandler))
+                // Server không giữ trạng thái đăng nhập
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth ->
                         auth
-                                .requestMatchers("/api/auth/**").permitAll()
-                                .requestMatchers("/ws/**").permitAll()
+                                .requestMatchers("/api/auth/**").permitAll() // Cho phép đi qua mà không cần xác thực
+                                .requestMatchers("/ws/**").permitAll() // Cho phép đi qua mà không cần xác thự
                                 .anyRequest().authenticated()
                 );
 
-
+        // Chèn bộ lọc Token.
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

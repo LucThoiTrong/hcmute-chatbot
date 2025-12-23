@@ -30,20 +30,18 @@ public class JwtUtils {
     @Value("${app.JWT_REFRESH_ExpirationMs}")
     private int refreshKeyExpirationMs;
 
-    // ================== KEY MANAGEMENT ==================
-
     // Key dành riêng cho Access Token
     private SecretKey getAccessTokenKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessKey));
     }
 
-    // Key dành riêng cho Refresh Token (MỚI)
+    // Key dành riêng cho Refresh Token
     private SecretKey getRefreshTokenKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(refreshKey));
     }
 
-    // ================== ACCESS TOKEN LOGIC ==================
 
+    // Access Token
     public String generateJwtToken(Authentication authentication) {
         CustomUserDetails userPrincipal = (CustomUserDetails) authentication.getPrincipal();
 
@@ -70,7 +68,6 @@ public class JwtUtils {
         return validateToken(authToken, getAccessTokenKey());
     }
 
-    // ================== REFRESH TOKEN LOGIC (MỚI) ==================
 
     /**
      * Tạo Refresh Token
@@ -106,9 +103,7 @@ public class JwtUtils {
         return validateToken(authToken, getRefreshTokenKey());
     }
 
-    // ================== COMMON HELPERS ==================
-
-    // Hàm validate chung để tránh viết lặp code try-catch
+    // Hàm validate
     private boolean validateToken(String authToken, SecretKey secretKey) {
         try {
             Jwts.parser()
