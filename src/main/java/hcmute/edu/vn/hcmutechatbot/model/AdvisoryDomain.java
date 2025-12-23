@@ -12,7 +12,6 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 public class AdvisoryDomain {
-
     private String id;
     private String name;
     private String description;

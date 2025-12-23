@@ -14,7 +14,6 @@ import java.util.Set;
 @Builder
 @Document(collection = "courses")
 public class Course {
-
     @Id
     private String id; // Mã môn học (INT1340...)
 

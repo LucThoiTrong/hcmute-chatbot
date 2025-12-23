@@ -14,7 +14,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @Document(collection = "enrollments")
 public class StudentEnrollment {
-
     @Id
     private String id;
 

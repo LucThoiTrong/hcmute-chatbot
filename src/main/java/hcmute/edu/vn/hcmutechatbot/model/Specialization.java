@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class Specialization {
-
     private String id;
     private String name;
     private String description;

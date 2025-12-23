@@ -15,7 +15,6 @@ import java.util.Set;
 @Builder
 @Document(collection = "course_classes")
 public class CourseClass {
-
     @Id
     private String id; // Mã lớp học phần
 

@@ -14,7 +14,6 @@ import java.util.Set;
 @Builder
 @Document(collection = "education_programs")
 public class EducationProgram {
-
     @Id
     private String id;
 

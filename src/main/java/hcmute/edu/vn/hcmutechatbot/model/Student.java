@@ -16,7 +16,6 @@ import java.time.LocalDate;
 @Builder
 @Document(collection = "students")
 public class Student {
-
     @Id
     private String studentId; // Mapping field này làm _id của MongoDB luôn
 

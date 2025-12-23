@@ -23,6 +23,6 @@ public class Message {
     private String content;
 
     private String senderId;
-    private SenderType senderType; // USER, ADVISOR, BOT
+    private SenderType senderType;
     private LocalDateTime sentAt;
 }
