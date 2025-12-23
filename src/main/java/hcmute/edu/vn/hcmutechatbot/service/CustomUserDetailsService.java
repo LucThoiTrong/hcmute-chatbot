@@ -19,7 +19,6 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
-
     private final StudentRepository studentRepository;
     private final LecturerRepository lecturerRepository;
     private final AccountRepository accountRepository;
@@ -34,7 +33,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     // --- 2. ĐĂNG NHẬP BẰNG GOOGLE EMAIL (Login Google) ---
-    // Phục vụ cho Step 5 "User Mapping" trong sơ đồ Workflow
     public UserDetails loadUserByGoogleEmail(String email) throws UsernameNotFoundException {
         Account account = accountRepository.findAccountByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Email chưa được liên kết với tài khoản nào: " + email));
@@ -43,8 +41,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     // --- 3. CORE LOGIC (Dùng chung) ---
-
-    // Hàm trung gian để build UserDetails, tránh lặp code build()
     private CustomUserDetails buildUserDetails(Account account) {
         // 1. Lấy FullName
         String fullName = getUserFullName(account);
@@ -52,7 +48,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         // 2. Lấy FacultyId theo logic từng Role
         String facultyId = getUserFacultyId(account);
 
-        // 3. Truyền cả 2 vào hàm build
         return CustomUserDetails.build(account, fullName, facultyId);
     }
 
@@ -65,7 +60,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         if (roles.contains(Role.STUDENT)) {
             return studentRepository.findById(account.getOwnerId())
                     .map(student -> {
-                        // Check null cho an toàn
                         if (student.getAcademicInfo() != null) {
                             return student.getAcademicInfo().getFacultyId();
                         }
@@ -74,7 +68,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                     .orElse("ALL");
         }
 
-        // CASE 2: Giảng viên -> Lấy trực tiếp
+        // CASE 2: Giảng viên
         if (roles.contains(Role.LECTURER) ||
                 roles.contains(Role.FACULTY_HEAD)) {
 
@@ -101,12 +95,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                     .orElse("Unknown Student");
         }
 
-        // CASE 2: Giảng viên / Nhân sự khoa / Quản lý
-        // Gom nhóm các role thuộc bảng Lecturer lại cho gọn
-        if (roles.contains(Role.LECTURER) ||
-                roles.contains(Role.FACULTY_HEAD) ||
-                roles.contains(Role.MANAGER)) {
-
+        // CASE 2: Giảng viên
+        if (roles.contains(Role.LECTURER) || roles.contains(Role.FACULTY_HEAD)) {
             return lecturerRepository.findById(account.getOwnerId())
                     .map(Lecturer::getFullName)
                     .orElse("Unknown Lecturer");

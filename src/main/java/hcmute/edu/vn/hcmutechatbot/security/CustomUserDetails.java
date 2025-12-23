@@ -34,12 +34,10 @@ public class CustomUserDetails implements UserDetails {
     // Method chuyển Account -> CustomUserDetails
     public static CustomUserDetails build(Account account, String fullName, String facultyId) {
 
-        // --- SỬA LẠI ĐOẠN NÀY ---
         // Duyệt qua list roles -> Map từng cái thành SimpleGrantedAuthority
         List<GrantedAuthority> authorities = account.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                 .collect(Collectors.toList());
-        // ------------------------
 
         return new CustomUserDetails(
                 account.getId(),

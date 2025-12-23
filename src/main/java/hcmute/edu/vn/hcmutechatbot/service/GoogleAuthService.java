@@ -4,13 +4,17 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
 import java.util.Collections;
+
 import org.springframework.beans.factory.annotation.Value;
 
 @Service
+@Slf4j
 public class GoogleAuthService {
-    @Value("${app.google.client.id}") // Cấu hình trong application.properties
+    @Value("${app.google.client.id}")
     private String clientId;
 
     public GoogleIdToken.Payload verifyToken(String idTokenString) {
@@ -24,7 +28,7 @@ public class GoogleAuthService {
                 return idToken.getPayload();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Google Token Verification failed: {}", e.getMessage());
         }
         return null;
     }

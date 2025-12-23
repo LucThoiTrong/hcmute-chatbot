@@ -2,6 +2,7 @@ package hcmute.edu.vn.hcmutechatbot.controller;
 
 import hcmute.edu.vn.hcmutechatbot.dto.response.ConsultantResponse;
 import hcmute.edu.vn.hcmutechatbot.dto.response.FacultyResponse;
+import hcmute.edu.vn.hcmutechatbot.exception.BadRequestException;
 import hcmute.edu.vn.hcmutechatbot.service.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +14,6 @@ import java.util.List;
 @RequestMapping("/api/resources")
 @RequiredArgsConstructor
 public class ResourceController {
-
     private final ResourceService resourceService;
 
     /**
@@ -34,7 +34,7 @@ public class ResourceController {
             @RequestParam(name = "domainId") String advisoryDomainId
     ) {
         if (advisoryDomainId == null || advisoryDomainId.trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            throw new BadRequestException("ID lĩnh vực tư vấn (domainId) không được để trống!");
         }
         return ResponseEntity.ok(resourceService.getConsultantsByDomain(advisoryDomainId));
     }

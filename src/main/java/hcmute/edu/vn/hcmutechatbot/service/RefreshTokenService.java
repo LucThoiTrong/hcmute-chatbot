@@ -1,6 +1,7 @@
 package hcmute.edu.vn.hcmutechatbot.service;
 
 import hcmute.edu.vn.hcmutechatbot.dto.response.JwtResponse; // Import DTO này
+import hcmute.edu.vn.hcmutechatbot.exception.TokenRefreshException;
 import hcmute.edu.vn.hcmutechatbot.model.RefreshToken;
 import hcmute.edu.vn.hcmutechatbot.repository.RefreshTokenRepository;
 import hcmute.edu.vn.hcmutechatbot.security.jwt.JwtUtils;
@@ -18,10 +19,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
-
     @Value("${app.JWT_REFRESH_ExpirationMs}")
     private Long refreshTokenDurationMs;
-
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtUtils jwtUtils;
     private final CustomUserDetailsService customUserDetailsService;
@@ -53,17 +52,17 @@ public class RefreshTokenService {
     public JwtResponse generateNewAccessToken(String requestRefreshToken) {
         // BƯỚC 1: Validate chữ ký
         if (!jwtUtils.validateRefreshToken(requestRefreshToken)) {
-            throw new RuntimeException("Refresh Token không hợp lệ (Validate failed)");
+            throw new TokenRefreshException("Refresh Token không hợp lệ (Validate failed)");
         }
 
         // BƯỚC 2: Tìm Token trong Database
         RefreshToken tokenInDB = refreshTokenRepository.findByToken(requestRefreshToken)
-                .orElseThrow(() -> new RuntimeException("Refresh Token không tồn tại trong hệ thống!"));
+                .orElseThrow(() -> new TokenRefreshException("Refresh Token không tồn tại trong hệ thống!"));
 
         // BƯỚC 3: Kiểm tra hạn sử dụng
         if (tokenInDB.getExpiryDate().compareTo(Instant.now()) < 0) {
             refreshTokenRepository.delete(tokenInDB);
-            throw new RuntimeException("Refresh Token đã hết hạn. Vui lòng đăng nhập lại!");
+            throw new TokenRefreshException("Refresh Token đã hết hạn. Vui lòng đăng nhập lại!");
         }
 
         // --- BẮT ĐẦU LOGIC XOAY VÒNG (ROTATION) ---

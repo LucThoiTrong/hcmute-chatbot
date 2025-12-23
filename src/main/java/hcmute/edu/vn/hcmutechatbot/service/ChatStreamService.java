@@ -25,7 +25,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Slf4j
 public class ChatStreamService {
-
     private final WebClient aiWebClient;
     private final SimpMessagingTemplate messagingTemplate;
 

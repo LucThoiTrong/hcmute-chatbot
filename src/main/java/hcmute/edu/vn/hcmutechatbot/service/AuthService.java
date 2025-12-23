@@ -2,7 +2,9 @@ package hcmute.edu.vn.hcmutechatbot.service;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import hcmute.edu.vn.hcmutechatbot.dto.response.JwtResponse;
-import hcmute.edu.vn.hcmutechatbot.mapper.AuthMapper; // [MỚI]
+import hcmute.edu.vn.hcmutechatbot.exception.InvalidTokenException;
+import hcmute.edu.vn.hcmutechatbot.exception.ResourceNotFoundException;
+import hcmute.edu.vn.hcmutechatbot.mapper.AuthMapper;
 import hcmute.edu.vn.hcmutechatbot.model.Account;
 import hcmute.edu.vn.hcmutechatbot.model.PasswordResetToken;
 import hcmute.edu.vn.hcmutechatbot.repository.AccountRepository;
@@ -39,7 +41,7 @@ public class AuthService {
         // B1: Verify Token
         GoogleIdToken.Payload payload = googleAuthService.verifyToken(googleToken);
         if (payload == null) {
-            throw new RuntimeException("Token Google không hợp lệ hoặc đã hết hạn!");
+            throw new InvalidTokenException("Token Google không hợp lệ hoặc đã hết hạn!");
         }
 
         // B2: Load User
@@ -67,7 +69,7 @@ public class AuthService {
         log.info("Processing forgot password for email: {}", email);
         // 1. Tìm account (Dùng hàm tìm cả email cá nhân và trường học)
         Account account = accountRepository.findAccountByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Email không tồn tại trong hệ thống!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Email không tồn tại trong hệ thống!"));
 
         // 2. Xóa token cũ nếu có (Tránh rác DB)
         passwordResetTokenRepository.deleteByAccount(account);
@@ -94,12 +96,12 @@ public class AuthService {
     public void processResetPassword(String token, String newPassword) {
         // 1. Tìm token trong DB
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Link không hợp lệ hoặc không tồn tại!"));
+                .orElseThrow(() -> new InvalidTokenException("Link không hợp lệ hoặc không tồn tại!"));
 
         // 2. Kiểm tra hết hạn
         if (resetToken.getExpiryDate().isBefore(Instant.now())) {
             passwordResetTokenRepository.delete(resetToken); // Xóa token hết hạn
-            throw new RuntimeException("Link đã hết hạn. Vui lòng gửi lại yêu cầu!");
+            throw new InvalidTokenException("Link đã hết hạn. Vui lòng gửi lại yêu cầu!");
         }
 
         // 3. Cập nhật mật khẩu mới cho Account

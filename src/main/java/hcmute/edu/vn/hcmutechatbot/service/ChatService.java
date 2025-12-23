@@ -2,6 +2,8 @@ package hcmute.edu.vn.hcmutechatbot.service;
 
 import hcmute.edu.vn.hcmutechatbot.dto.response.ConversationResponse;
 import hcmute.edu.vn.hcmutechatbot.dto.response.MessageResponse;
+import hcmute.edu.vn.hcmutechatbot.exception.ResourceNotFoundException;
+import hcmute.edu.vn.hcmutechatbot.exception.AccessDeniedException;
 import hcmute.edu.vn.hcmutechatbot.mapper.ConversationMapper;
 import hcmute.edu.vn.hcmutechatbot.mapper.MessageMapper;
 import hcmute.edu.vn.hcmutechatbot.model.Conversation;
@@ -86,13 +88,13 @@ public class ChatService implements ISecurityService {
     // 2. Hàm Patch cập nhật tiêu đề cuộc hội thoại (userTitles)
     public ConversationResponse updateConversationTitle(String conversationId, String newTitle) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
 
         String userId = getCurrentUserId();
 
         // Kiểm tra xem user có trong cuộc hội thoại không
         if (!conversation.getParticipantIds().contains(userId)) {
-            throw new RuntimeException("User is not a participant of this conversation");
+            throw new AccessDeniedException("User is not a participant of this conversation");
         }
 
         // Cập nhật title riêng cho user này
@@ -106,7 +108,7 @@ public class ChatService implements ISecurityService {
     // 3. Hàm Patch cập nhật xóa mềm (deletedByUserIds)
     public void softDeleteConversation(String conversationId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
 
         String userId = getCurrentUserId();
 
@@ -125,11 +127,11 @@ public class ChatService implements ISecurityService {
 
         // 1. Kiểm tra Conversation tồn tại
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
 
         // 2. Kiểm tra quyền truy cập (User phải có trong participantIds)
         if (!conversation.getParticipantIds().contains(userId)) {
-            throw new RuntimeException("Bạn không có quyền truy cập cuộc hội thoại này");
+            throw new AccessDeniedException("Bạn không có quyền truy cập cuộc hội thoại này");
         }
 
         // 3. Query DB lấy tin nhắn (Sắp xếp MỚI NHẤT lên đầu để lazy load đúng chuẩn)
@@ -191,7 +193,7 @@ public class ChatService implements ISecurityService {
 
         // 6. Map vào DTO trả về (Kết hợp Message + Tên vừa tra được)
         return messagePage.map(msg -> {
-            String displayName = null;
+            String displayName;
 
             if (msg.getSenderType() == SenderType.BOT) {
                 displayName = null;
@@ -209,12 +211,12 @@ public class ChatService implements ISecurityService {
 
         // 1. Tìm trong DB
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
 
         // 2. Security Check: Người dùng có nằm trong cuộc hội thoại này không?
         // Nếu không có dòng này, ai biết ID cũng xem được trộm tin nhắn -> Lỗi bảo mật to
         if (conversation.getParticipantIds() == null || !conversation.getParticipantIds().contains(userId)) {
-            throw new RuntimeException("Bạn không có quyền truy cập cuộc hội thoại này");
+            throw new AccessDeniedException("Bạn không có quyền truy cập cuộc hội thoại này!");
         }
 
         // 3. Map sang DTO (Lúc này DTO sẽ có threadId)

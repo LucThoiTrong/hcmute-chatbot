@@ -1,11 +1,12 @@
 package hcmute.edu.vn.hcmutechatbot.service;
 
 import hcmute.edu.vn.hcmutechatbot.dto.response.NotificationResponse;
+import hcmute.edu.vn.hcmutechatbot.exception.AccessDeniedException;
+import hcmute.edu.vn.hcmutechatbot.exception.ResourceNotFoundException;
 import hcmute.edu.vn.hcmutechatbot.mapper.NotificationMapper;
 import hcmute.edu.vn.hcmutechatbot.model.CourseClass;
 import hcmute.edu.vn.hcmutechatbot.model.Lecturer;
 import hcmute.edu.vn.hcmutechatbot.model.Notification;
-import hcmute.edu.vn.hcmutechatbot.model.Student;
 import hcmute.edu.vn.hcmutechatbot.model.enums.NotificationScope;
 import hcmute.edu.vn.hcmutechatbot.repository.*;
 import hcmute.edu.vn.hcmutechatbot.security.ISecurityService;
@@ -27,11 +28,12 @@ public class NotificationService implements ISecurityService {
     private final NotificationMapper notificationMapper;
     private final StudentRepository studentRepository;
     private final LecturerRepository lecturerRepository;
-    // Đã xóa UserRepository vì bạn quản lý User qua Student và Lecturer riêng biệt
 
-    // --- Helper Method: Lấy tên người gửi (Update mới) ---
+    // --- Helper Method: Lấy tên người gửi ---
     private String getSenderName(String senderId) {
-        if (senderId == null) return "Unknown Sender";
+        if (senderId == null) {
+            return "Unknown Sender";
+        }
 
         // 1. Tìm trong danh sách Giảng viên trước
         Optional<Lecturer> lecturer = lecturerRepository.findById(senderId);
@@ -107,7 +109,7 @@ public class NotificationService implements ISecurityService {
                 notificationMapper.toResponse(
                         notification,
                         userId,
-                        getSenderName(notification.getSenderId()) // Logic lấy tên đã được sửa
+                        getSenderName(notification.getSenderId())
                 )
         );
     }
@@ -147,11 +149,11 @@ public class NotificationService implements ISecurityService {
     public NotificationResponse markNotificationAsRead(String notificationId) {
         String userId = getCurrentUserId();
         if (userId == null) {
-            throw new RuntimeException("Lỗi xác thực: Người dùng chưa đăng nhập hoặc không xác định.");
+            throw new AccessDeniedException("Lỗi xác thực: Người dùng chưa đăng nhập hoặc không xác định.");
         }
 
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new NoSuchElementException("Không tìm thấy thông báo với ID: " + notificationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông báo với ID: " + notificationId));
 
         Set<String> readByUsers = notification.getReadByUserIds();
         boolean wasModified = readByUsers.add(userId);
