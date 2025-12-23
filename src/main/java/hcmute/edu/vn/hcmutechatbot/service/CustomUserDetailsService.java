@@ -48,7 +48,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         // 2. Lấy FacultyId theo logic từng Role
         String facultyId = getUserFacultyId(account);
 
-        // 3. Truyền cả 2 vào hàm build
         return CustomUserDetails.build(account, fullName, facultyId);
     }
 
@@ -96,12 +95,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                     .orElse("Unknown Student");
         }
 
-        // CASE 2: Giảng viên / Nhân sự khoa / Quản lý
-        // Gom nhóm các role thuộc bảng Lecturer lại cho gọn
-        if (roles.contains(Role.LECTURER) ||
-                roles.contains(Role.FACULTY_HEAD) ||
-                roles.contains(Role.MANAGER)) {
-
+        // CASE 2: Giảng viên
+        if (roles.contains(Role.LECTURER) || roles.contains(Role.FACULTY_HEAD)) {
             return lecturerRepository.findById(account.getOwnerId())
                     .map(Lecturer::getFullName)
                     .orElse("Unknown Lecturer");

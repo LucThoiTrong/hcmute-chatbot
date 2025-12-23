@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class NotificationController {
     private final NotificationService notificationService;
 
-    // --- 1. Lấy thông báo được nhận (Public cho user đã login) ---
+    // --- 1. Lấy thông báo được nhận ---
     @GetMapping
     public ResponseEntity<Page<NotificationResponse>> getNotifications(
             @RequestParam(defaultValue = "0") int page,

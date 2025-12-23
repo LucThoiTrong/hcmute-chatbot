@@ -3,6 +3,7 @@ package hcmute.edu.vn.hcmutechatbot.controller;
 import hcmute.edu.vn.hcmutechatbot.dto.request.UpdateConversationTitleRequest;
 import hcmute.edu.vn.hcmutechatbot.dto.response.ConversationResponse;
 import hcmute.edu.vn.hcmutechatbot.dto.response.MessageResponse;
+import hcmute.edu.vn.hcmutechatbot.exception.BadRequestException;
 import hcmute.edu.vn.hcmutechatbot.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,7 @@ public class ChatController {
         String newTitle = request.getTitle();
 
         if (newTitle == null || newTitle.trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            throw new BadRequestException("Tiêu đề cuộc hội thoại không được để trống!");
         }
 
         return ResponseEntity.ok(chatService.updateConversationTitle(conversationId, newTitle));

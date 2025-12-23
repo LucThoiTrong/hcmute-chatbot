@@ -2,6 +2,7 @@ package hcmute.edu.vn.hcmutechatbot.service;
 
 import hcmute.edu.vn.hcmutechatbot.dto.response.ConsultantResponse;
 import hcmute.edu.vn.hcmutechatbot.dto.response.FacultyResponse;
+import hcmute.edu.vn.hcmutechatbot.exception.ResourceNotFoundException;
 import hcmute.edu.vn.hcmutechatbot.mapper.ConsultantMapper;
 import hcmute.edu.vn.hcmutechatbot.mapper.FacultyMapper;
 import hcmute.edu.vn.hcmutechatbot.model.AdvisoryDomain;
@@ -21,7 +22,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ResourceService {
-
     private final FacultyRepository facultyRepository;
     private final LecturerRepository lecturerRepository;
     private final StudentRepository studentRepository;
@@ -47,13 +47,13 @@ public class ResourceService {
     public List<ConsultantResponse> getConsultantsByDomain(String advisoryDomainId) {
         // 1. Tìm Faculty chứa AdvisoryDomain đó
         Faculty faculty = facultyRepository.findByAdvisoryDomainsId(advisoryDomainId)
-                .orElseThrow(() -> new RuntimeException("Advisory Domain not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Advisory Domain not found"));
 
         // 2. Lấy Set of consultantIds từ AdvisoryDomain tương ứng
         AdvisoryDomain domain = faculty.getAdvisoryDomains().stream()
                 .filter(d -> d.getId().equals(advisoryDomainId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Advisory Domain not found in Faculty"));
+                .orElseThrow(() -> new ResourceNotFoundException("Advisory Domain not found in Faculty"));
 
         Set<String> consultantIds = domain.getConsultantIds();
         if (consultantIds == null || consultantIds.isEmpty()) {

@@ -2,6 +2,8 @@ package hcmute.edu.vn.hcmutechatbot.service;
 
 import hcmute.edu.vn.hcmutechatbot.dto.response.LecturerStatResponse;
 import hcmute.edu.vn.hcmutechatbot.dto.response.TopicStatResponse;
+import hcmute.edu.vn.hcmutechatbot.exception.AccessDeniedException;
+import hcmute.edu.vn.hcmutechatbot.exception.ResourceNotFoundException;
 import hcmute.edu.vn.hcmutechatbot.model.Lecturer;
 import hcmute.edu.vn.hcmutechatbot.repository.ConversationRepository;
 import hcmute.edu.vn.hcmutechatbot.repository.LecturerRepository;
@@ -18,7 +20,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DashboardService implements ISecurityService {
-
     private final ConversationRepository conversationRepository;
     private final LecturerRepository lecturerRepository;
 
@@ -28,11 +29,11 @@ public class DashboardService implements ISecurityService {
 
         // 2. Query DB Lecturer để tìm thông tin giảng viên
         Lecturer lecturer = lecturerRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy giảng viên với ID: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giảng viên với ID: " + userId));
 
         // 3. Lấy Faculty ID
         if (lecturer.getFacultyId() == null) {
-            throw new RuntimeException("Giảng viên chưa thuộc về Khoa nào.");
+            throw new AccessDeniedException("Giảng viên chưa thuộc về Khoa nào.");
         }
         return lecturer.getFacultyId();
     }

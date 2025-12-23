@@ -23,12 +23,9 @@ import java.util.HashSet;
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationRealtimeService {
-
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
-
-    // Inject Repository để tìm FacultyId của người gửi
     private final StudentRepository studentRepository;
     private final LecturerRepository lecturerRepository;
 
