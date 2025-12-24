@@ -193,7 +193,7 @@ public class DatabaseInitializer implements CommandLineRunner {
         Student s2 = Student.builder()
                 .studentId(STUDENT_ECO_ID).fullName("Bùi Đức Lộc").birthDate(LocalDate.of(2005, 8, 15))
                 .gender(Gender.MALE).citizenId("079000000002")
-                .contactInfo(ContactInfo.builder().mobilePhone("0909876543").personalEmail("sv_eco@gmail.com").build())
+                .contactInfo(ContactInfo.builder().mobilePhone("0909876543").personalEmail("bigbossteamute@gmail.com").build())
                 .academicInfo(AcademicInfo.builder()
                         .cohort("2023").admissionDate(LocalDate.of(2023, 9, 5))
                         .facultyId("F_ECO").facultyName("Khoa Kinh tế").majorId("M_LOG").majorName("Logistics")

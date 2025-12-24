@@ -71,8 +71,7 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
         // Gọi service để tìm user, tạo token và gửi email
         authService.processForgotPassword(request.getEmail());
-        return ResponseEntity.ok("Link đặt lại mật khẩu đã được gửi vào email của bạn (nếu tồn tại)!");
-
+        return ResponseEntity.ok("Link đặt lại mật khẩu đã được gửi vào email của bạn!");
     }
 
     // --- 2.2 ĐẶT LẠI MẬT KHẨU ---
