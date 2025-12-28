@@ -15,4 +15,6 @@ public class TimeSlot {
     private int endPeriod;    // Tiết kết thúc
     private String room;
     private String campus;    // Cơ sở 1, Cơ sở 2...
+    private String startTime;
+    private String endTime;
 }

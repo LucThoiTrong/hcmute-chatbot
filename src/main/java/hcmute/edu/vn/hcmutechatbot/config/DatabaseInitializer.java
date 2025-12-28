@@ -3,6 +3,7 @@ package hcmute.edu.vn.hcmutechatbot.config;
 import hcmute.edu.vn.hcmutechatbot.model.*;
 import hcmute.edu.vn.hcmutechatbot.model.enums.*;
 import hcmute.edu.vn.hcmutechatbot.repository.*;
+import hcmute.edu.vn.hcmutechatbot.util.TimeUtils; // <--- Import quan trọng
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -26,7 +27,6 @@ public class DatabaseInitializer implements CommandLineRunner {
     private final EducationProgramRepository programRepository;
     private final CourseClassRepository courseClassRepository;
     private final StudentEnrollmentRepository enrollmentRepository;
-    // Đã xoá: ConversationRepository, MessageRepository, NotificationRepository
 
     private final PasswordEncoder passwordEncoder;
 
@@ -36,23 +36,14 @@ public class DatabaseInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Chỉ khởi tạo khi DB trống (check bảng Account)
+        // Chỉ khởi tạo khi DB trống
         if (accountRepository.count() == 0) {
-            System.out.println("🚀 BẮT ĐẦU KHỞI TẠO DỮ LIỆU HCMUTE CHATBOT (CLEAN VERSION)...");
+            System.out.println("🚀 BẮT ĐẦU KHỞI TẠO DỮ LIỆU HCMUTE CHATBOT (FULL REAL DATA)...");
 
-            // 1. Khởi tạo KHOA - NGÀNH - LĨNH VỰC TƯ VẤN
             initFacultyAndDomains();
-
-            // 2. Khởi tạo USERS (2 SV, 1 Manager, Nhiều GV)
             initUsersAndAccounts();
-
-            // 3. Khởi tạo MÔN HỌC & CHƯƠNG TRÌNH ĐÀO TẠO
             initCoursesAndPrograms();
-
-            // 4. Khởi tạo LỚP HỌC PHẦN & ĐĂNG KÝ (Logic tạo data 3 năm)
             initClassesAndEnrollments();
-
-            // Đã xoá bước 5 (Chat) và 6 (Notification)
 
             System.out.println("✅ KHỞI TẠO DỮ LIỆU HOÀN TẤT!");
             log.info("✅ KHỞI TẠO DỮ LIỆU HOÀN TẤT!");
@@ -63,83 +54,35 @@ public class DatabaseInitializer implements CommandLineRunner {
     // 1. DATA KHOA & LĨNH VỰC TƯ VẤN
     // ==========================================
     private void initFacultyAndDomains() {
-        // --- A. KHOA CNTT (Faculty IT) ---
+        // --- KHOA CNTT ---
         Specialization specSE = Specialization.builder().id("S_SE").name("Công nghệ phần mềm").description("Phát triển ứng dụng").build();
         Specialization specAI = Specialization.builder().id("S_AI").name("Trí tuệ nhân tạo").description("Deep Learning, ML").build();
 
-        Major majorIT = Major.builder()
-                .id("M_IT").name("Công nghệ Thông tin").description("Đào tạo kỹ sư CNTT")
-                .specializations(Set.of(specSE))
-                .build();
+        Major majorIT = Major.builder().id("M_IT").name("Công nghệ Thông tin").description("Đào tạo kỹ sư CNTT").specializations(Set.of(specSE)).build();
+        Major majorDS = Major.builder().id("M_DS").name("Kỹ thuật Dữ liệu").description("Data Science").specializations(Set.of(specAI)).build();
 
-        Major majorDS = Major.builder()
-                .id("M_DS").name("Kỹ thuật Dữ liệu").description("Data Science & Big Data")
-                .specializations(Set.of(specAI))
-                .build();
+        AdvisoryDomain domainAcademicIT = AdvisoryDomain.builder().id("D_IT_ACADEMIC").name("Cố vấn học tập CNTT").description("Tư vấn lộ trình").consultantIds(Set.of("GV_IT_01")).build();
+        AdvisoryDomain domainResearchIT = AdvisoryDomain.builder().id("D_IT_RESEARCH").name("Nghiên cứu khoa học").description("Hướng dẫn đề tài").consultantIds(Set.of("GV_IT_02")).build();
+        AdvisoryDomain domainJobIT = AdvisoryDomain.builder().id("D_IT_JOB").name("Thực tập & Việc làm").description("Giới thiệu việc làm").consultantIds(Set.of("GV_IT_03")).build();
 
-        AdvisoryDomain domainAcademicIT = AdvisoryDomain.builder()
-                .id("D_IT_ACADEMIC").name("Cố vấn học tập CNTT").description("Tư vấn lộ trình, đăng ký môn")
-                .consultantIds(Set.of("GV_IT_01"))
-                .build();
+        Faculty facultyIT = Faculty.builder().id("F_IT").name("Khoa Công nghệ Thông tin").type(FacultyType.ACADEMIC).majors(Set.of(majorIT, majorDS)).advisoryDomains(Set.of(domainAcademicIT, domainResearchIT, domainJobIT)).build();
 
-        AdvisoryDomain domainResearchIT = AdvisoryDomain.builder()
-                .id("D_IT_RESEARCH").name("Nghiên cứu khoa học").description("Hướng dẫn đề tài, viết báo")
-                .consultantIds(Set.of("GV_IT_02"))
-                .build();
+        // --- KHOA KINH TẾ ---
+        Major majorLogistics = Major.builder().id("M_LOG").name("Logistics").description("Chuỗi cung ứng").specializations(Collections.emptySet()).build();
+        AdvisoryDomain domainAcademicEco = AdvisoryDomain.builder().id("D_ECO_ACADEMIC").name("Cố vấn học tập Kinh tế").description("Tư vấn kinh tế").consultantIds(Set.of("GV_ECO_01")).build();
+        Faculty facultyEco = Faculty.builder().id("F_ECO").name("Khoa Kinh tế").type(FacultyType.ACADEMIC).majors(Set.of(majorLogistics)).advisoryDomains(Set.of(domainAcademicEco)).build();
 
-        AdvisoryDomain domainJobIT = AdvisoryDomain.builder()
-                .id("D_IT_JOB").name("Thực tập & Việc làm").description("Giới thiệu công ty thực tập")
-                .consultantIds(Set.of("GV_IT_03"))
-                .build();
-
-        Faculty facultyIT = Faculty.builder()
-                .id("F_IT").name("Khoa Công nghệ Thông tin").description("Faculty of IT")
-                .type(FacultyType.ACADEMIC)
-                .majors(Set.of(majorIT, majorDS))
-                .advisoryDomains(Set.of(domainAcademicIT, domainResearchIT, domainJobIT))
-                .build();
-
-        // --- B. KHOA KINH TẾ ---
-        Major majorLogistics = Major.builder()
-                .id("M_LOG").name("Logistics").description("Quản lý chuỗi cung ứng")
-                .specializations(Collections.emptySet())
-                .build();
-
-        AdvisoryDomain domainAcademicEco = AdvisoryDomain.builder()
-                .id("D_ECO_ACADEMIC").name("Cố vấn học tập Kinh tế").description("Tư vấn sinh viên kinh tế")
-                .consultantIds(Set.of("GV_ECO_01"))
-                .build();
-
-        Faculty facultyEco = Faculty.builder()
-                .id("F_ECO").name("Khoa Kinh tế").description("Faculty of Economics")
-                .type(FacultyType.ACADEMIC)
-                .majors(Set.of(majorLogistics))
-                .advisoryDomains(Set.of(domainAcademicEco))
-                .build();
-
-        // --- C. PHÒNG CÔNG TÁC SINH VIÊN ---
-        AdvisoryDomain domainStudentAffairs = AdvisoryDomain.builder()
-                .id("D_CTSV").name("Công tác sinh viên").description("Học bổng, Rèn luyện, Ngoại trú")
-                .consultantIds(Set.of("GV_ADMIN"))
-                .build();
-
-        Faculty officeStudent = Faculty.builder()
-                .id("F_SA").name("Phòng Công tác Sinh viên").description("Hỗ trợ đời sống sinh viên")
-                .type(FacultyType.SERVICE)
-                .majors(Collections.emptySet())
-                .advisoryDomains(Set.of(domainStudentAffairs))
-                .build();
+        // --- PHÒNG CTSV ---
+        AdvisoryDomain domainStudentAffairs = AdvisoryDomain.builder().id("D_CTSV").name("Công tác sinh viên").description("Học bổng, Rèn luyện").consultantIds(Set.of("GV_ADMIN")).build();
+        Faculty officeStudent = Faculty.builder().id("F_SA").name("Phòng Công tác Sinh viên").type(FacultyType.SERVICE).majors(Collections.emptySet()).advisoryDomains(Set.of(domainStudentAffairs)).build();
 
         facultyRepository.saveAll(List.of(facultyIT, facultyEco, officeStudent));
-        System.out.println("   -> Đã tạo: Khoa CNTT, Khoa Kinh tế, Phòng CTSV");
-        log.info("  -> Đã tạo: Khoa CNTT, Khoa Kinh tế, Phòng CTSV");
     }
 
     // ==========================================
     // 2. DATA USERS & ACCOUNTS
     // ==========================================
     private void initUsersAndAccounts() {
-        // Xóa data cũ để tránh lỗi conflict roles nếu chạy lại
         lecturerRepository.deleteAll();
         studentRepository.deleteAll();
         accountRepository.deleteAll();
@@ -149,79 +92,41 @@ public class DatabaseInitializer implements CommandLineRunner {
         List<Account> accounts = new ArrayList<>();
         String defaultPass = passwordEncoder.encode("123456");
 
-        // --- 2.1 GIẢNG VIÊN ---
+        // --- GIẢNG VIÊN (Define tên cụ thể ở đây) ---
         lecturers.add(Lecturer.builder().id("GV_IT_01").fullName("TS. Nguyễn Văn Code").facultyId("F_IT").facultyName("Khoa CNTT").build());
         lecturers.add(Lecturer.builder().id("GV_IT_02").fullName("PGS. Trần Thị Data").facultyId("F_IT").facultyName("Khoa CNTT").build());
         lecturers.add(Lecturer.builder().id("GV_IT_03").fullName("ThS. Lê Văn Job").facultyId("F_IT").facultyName("Khoa CNTT").build());
         lecturers.add(Lecturer.builder().id("GV_ECO_01").fullName("TS. Phạm Kinh Tế").facultyId("F_ECO").facultyName("Khoa Kinh tế").build());
+        lecturers.add(Lecturer.builder().id("GV_ADMIN").fullName("Thầy Quản Lý").facultyId("F_SA").facultyName("Phòng CTSV").build());
 
         lecturerRepository.saveAll(lecturers);
 
         for (Lecturer lec : lecturers) {
-            // Tạo Set Roles
             Set<Role> roles = new HashSet<>();
-            roles.add(Role.LECTURER); // Mặc định ai cũng là Giảng viên
+            roles.add(Role.LECTURER);
+            if (lec.getId().equals("GV_IT_01")) roles.add(Role.FACULTY_HEAD);
 
-            if (lec.getId().equals("GV_IT_01")) {
-                roles.add(Role.FACULTY_HEAD);
-            }
-
-            accounts.add(Account.builder()
-                    .username(lec.getId())
-                    .password(defaultPass)
-                    .roles(roles) // ✅ Lưu set roles
-                    .ownerId(lec.getId())
-                    .personalEmail(lec.getId().toLowerCase() + "@hcmute.edu.vn")
-                    .build());
+            accounts.add(Account.builder().username(lec.getId()).password(defaultPass).roles(roles).ownerId(lec.getId()).personalEmail(lec.getId().toLowerCase() + "@hcmute.edu.vn").build());
         }
 
-        // --- 2.2 SINH VIÊN ---
-
-        // SV 1: Khoa CNTT
-        Student s1 = Student.builder()
-                .studentId(STUDENT_IT_ID).fullName("Lục Thới Trọng").birthDate(LocalDate.of(2003, 5, 20))
-                .gender(Gender.MALE).citizenId("079000000001")
+        // --- SINH VIÊN ---
+        Student s1 = Student.builder().studentId(STUDENT_IT_ID).fullName("Lục Thới Trọng").birthDate(LocalDate.of(2003, 5, 20)).gender(Gender.MALE).citizenId("079000000001")
                 .contactInfo(ContactInfo.builder().mobilePhone("0901234567").personalEmail("lucthoitrong@gmail.com").build())
-                .academicInfo(AcademicInfo.builder()
-                        .cohort("2021").admissionDate(LocalDate.of(2021, 9, 5))
-                        .facultyId("F_IT").facultyName("Khoa CNTT").majorId("M_IT").majorName("Công nghệ Thông tin")
-                        .build())
-                .build();
+                .academicInfo(AcademicInfo.builder().cohort("2021").admissionDate(LocalDate.of(2021, 9, 5)).facultyId("F_IT").facultyName("Khoa CNTT").majorId("M_IT").majorName("Công nghệ Thông tin").build()).build();
         students.add(s1);
 
-        // SV 2: Khoa Kinh Tế
-        Student s2 = Student.builder()
-                .studentId(STUDENT_ECO_ID).fullName("Bùi Đức Lộc").birthDate(LocalDate.of(2005, 8, 15))
-                .gender(Gender.MALE).citizenId("079000000002")
+        Student s2 = Student.builder().studentId(STUDENT_ECO_ID).fullName("Bùi Đức Lộc").birthDate(LocalDate.of(2005, 8, 15)).gender(Gender.MALE).citizenId("079000000002")
                 .contactInfo(ContactInfo.builder().mobilePhone("0909876543").personalEmail("bigbossteamute@gmail.com").build())
-                .academicInfo(AcademicInfo.builder()
-                        .cohort("2023").admissionDate(LocalDate.of(2023, 9, 5))
-                        .facultyId("F_ECO").facultyName("Khoa Kinh tế").majorId("M_LOG").majorName("Logistics")
-                        .build())
-                .build();
+                .academicInfo(AcademicInfo.builder().cohort("2023").admissionDate(LocalDate.of(2023, 9, 5)).facultyId("F_ECO").facultyName("Khoa Kinh tế").majorId("M_LOG").majorName("Logistics").build()).build();
         students.add(s2);
 
         studentRepository.saveAll(students);
 
         for (Student stu : students) {
-            // Role sinh viên cũng phải là Set
-            Set<Role> studentRoles = new HashSet<>();
-            studentRoles.add(Role.STUDENT);
-
-            accounts.add(Account.builder()
-                    .username(stu.getStudentId())
-                    .password(defaultPass)
-                    .roles(studentRoles) // ✅ Lưu set roles
-                    .ownerId(stu.getStudentId())
-                    .personalEmail(stu.getContactInfo().getPersonalEmail())
-                    .build());
+            accounts.add(Account.builder().username(stu.getStudentId()).password(defaultPass).roles(Collections.singleton(Role.STUDENT)).ownerId(stu.getStudentId()).personalEmail(stu.getContactInfo().getPersonalEmail()).build());
         }
 
         accountRepository.saveAll(accounts);
-        System.out.println("   -> Đã tạo: " + lecturers.size() + " Giảng viên, " + students.size() + " Sinh viên.");
-        System.out.println("   -> Tài khoản 'gv_head_it' sẽ có 2 roles: LECTURER và FACULTY_HEAD.");
-        log.info("   -> Đã tạo: " + lecturers.size() + " Giảng viên, " + students.size() + " Sinh viên.");
-        log.info("   -> Tài khoản 'gv_head_it' sẽ có 2 roles: LECTURER và FACULTY_HEAD.");
     }
 
     // ==========================================
@@ -229,9 +134,7 @@ public class DatabaseInitializer implements CommandLineRunner {
     // ==========================================
     private void initCoursesAndPrograms() {
         List<Course> courses = new ArrayList<>();
-
-        // --- 3.1 Tạo Môn học ---
-        // CNTT
+        // CNTT: Gán đúng GV phụ trách
         courses.add(Course.builder().id("INT101").name("Lập trình Java").facultyId("F_IT").lecturers(Set.of("GV_IT_01")).build());
         courses.add(Course.builder().id("INT102").name("Cấu trúc dữ liệu").facultyId("F_IT").lecturers(Set.of("GV_IT_01")).build());
         courses.add(Course.builder().id("INT103").name("Lập trình Web").facultyId("F_IT").lecturers(Set.of("GV_IT_03")).build());
@@ -248,8 +151,7 @@ public class DatabaseInitializer implements CommandLineRunner {
 
         courseRepository.saveAll(courses);
 
-        // --- 3.2 Tạo Chương trình đào tạo ---
-        // Program CNTT
+        // Chương trình đào tạo
         Set<ProgramSubject> itSubjects = new HashSet<>();
         itSubjects.add(createSubject("INT101", "Lập trình Java", 3, 1));
         itSubjects.add(createSubject("INT102", "Cấu trúc dữ liệu", 3, 2));
@@ -257,104 +159,47 @@ public class DatabaseInitializer implements CommandLineRunner {
         itSubjects.add(createSubject("INT104", "Cơ sở dữ liệu", 3, 4));
         itSubjects.add(createSubject("INT105", "Trí tuệ nhân tạo", 3, 5));
         itSubjects.add(createSubject("INT106", "Khóa luận tốt nghiệp", 10, 8));
+        EducationProgram programIT = EducationProgram.builder().majorId("M_IT").cohort("2021").subjects(itSubjects).build();
 
-        EducationProgram programIT = EducationProgram.builder()
-                .majorId("M_IT").cohort("2021")
-                .subjects(itSubjects)
-                .build();
-
-        // Program Logistics
         Set<ProgramSubject> ecoSubjects = new HashSet<>();
         ecoSubjects.add(createSubject("ECO101", "Kinh tế vĩ mô", 3, 1));
         ecoSubjects.add(createSubject("ECO102", "Kinh tế vi mô", 3, 2));
         ecoSubjects.add(createSubject("ECO103", "Marketing căn bản", 3, 3));
         ecoSubjects.add(createSubject("ECO104", "Quản trị Logistics", 3, 4));
         ecoSubjects.add(createSubject("ECO105", "Luật kinh doanh", 3, 5));
-
-        EducationProgram programEco = EducationProgram.builder()
-                .majorId("M_LOG").cohort("2023")
-                .subjects(ecoSubjects)
-                .build();
+        EducationProgram programEco = EducationProgram.builder().majorId("M_LOG").cohort("2023").subjects(ecoSubjects).build();
 
         programRepository.saveAll(List.of(programIT, programEco));
-        System.out.println("   -> Đã tạo: 11 Môn học & 2 Chương trình đào tạo");
     }
 
     private ProgramSubject createSubject(String id, String name, int credits, int semester) {
-        return ProgramSubject.builder()
-                .courseId(id).courseName(name)
-                .subjectType(SubjectType.COMPULSORY)
-                .credits(credits)
-                .semester(semester)
-                .build();
+        return ProgramSubject.builder().courseId(id).courseName(name).subjectType(SubjectType.COMPULSORY).credits(credits).semester(semester).build();
     }
 
     // ==========================================
-    // 4. DATA LỚP HỌC & ENROLLMENT (EXPANDED 2023-2026)
+    // 4. DATA LỚP HỌC & ENROLLMENT (REALISTIC)
     // ==========================================
     private void initClassesAndEnrollments() {
         List<CourseClass> classes = new ArrayList<>();
         List<StudentEnrollment> enrollments = new ArrayList<>();
 
-        // =============================================
-        // A. SINH VIÊN IT (22110254) - Lộ trình 3 năm
-        // =============================================
+        // SV IT (22110254)
+        createClassAndEnrollment(classes, enrollments, "CL_JAVA_01", "Lập trình Java", "INT101", "GV_IT_01", "HK1_2023_2024", "2023-2024", STUDENT_IT_ID, 8.0, 9.0, 8.5);
+        createClassAndEnrollment(classes, enrollments, "CL_WEB_01", "Lập trình Web", "INT103", "GV_IT_03", "HK2_2023_2024", "2023-2024", STUDENT_IT_ID, 7.5, 8.5, 8.0);
+        createClassAndEnrollment(classes, enrollments, "CL_DB_02", "Cơ sở dữ liệu", "INT104", "GV_IT_02", "HK1_2024_2025", "2024-2025", STUDENT_IT_ID, 6.0, 7.0, 6.5);
+        createClassAndEnrollment(classes, enrollments, "CL_AI_01", "Trí tuệ nhân tạo", "INT105", "GV_IT_02", "HK2_2024_2025", "2024-2025", STUDENT_IT_ID, 9.0, 9.5, 9.3);
+        createClassAndEnrollment(classes, enrollments, "CL_CAPSTONE_01", "Khóa luận tốt nghiệp", "INT106", "GV_IT_01", "HK1_2025_2026", "2025-2026", STUDENT_IT_ID, null, null, null);
 
-        // 1. Năm học 2023-2024
-        createClassAndEnrollment(classes, enrollments,
-                "CL_JAVA_01", "Lập trình Java", "INT101", "GV_IT_01",
-                "HK1_2023_2024", "2023-2024", STUDENT_IT_ID, 8.0, 9.0, 8.5);
-
-        createClassAndEnrollment(classes, enrollments,
-                "CL_WEB_01", "Lập trình Web", "INT103", "GV_IT_03",
-                "HK2_2023_2024", "2023-2024", STUDENT_IT_ID, 7.5, 8.5, 8.0);
-
-        // 2. Năm học 2024-2025
-        createClassAndEnrollment(classes, enrollments,
-                "CL_DB_02", "Cơ sở dữ liệu", "INT104", "GV_IT_02",
-                "HK1_2024_2025", "2024-2025", STUDENT_IT_ID, 6.0, 7.0, 6.5);
-
-        createClassAndEnrollment(classes, enrollments,
-                "CL_AI_01", "Trí tuệ nhân tạo", "INT105", "GV_IT_02",
-                "HK2_2024_2025", "2024-2025", STUDENT_IT_ID, 9.0, 9.5, 9.3);
-
-        // 3. Năm học 2025-2026
-        createClassAndEnrollment(classes, enrollments,
-                "CL_CAPSTONE_01", "Khóa luận tốt nghiệp", "INT106", "GV_IT_01",
-                "HK1_2025_2026", "2025-2026", STUDENT_IT_ID, null, null, null);
-
-        // =============================================
-        // B. SINH VIÊN KINH TẾ (22110177) - Lộ trình 3 năm
-        // =============================================
-
-        // 1. Năm học 2023-2024
-        createClassAndEnrollment(classes, enrollments,
-                "CL_MACRO_01", "Kinh tế vĩ mô", "ECO101", "GV_ECO_01",
-                "HK1_2023_2024", "2023-2024", STUDENT_ECO_ID, 7.5, 8.0, 7.8);
-
-        createClassAndEnrollment(classes, enrollments,
-                "CL_MICRO_02", "Kinh tế vi mô", "ECO102", "GV_ECO_01",
-                "HK2_2023_2024", "2023-2024", STUDENT_ECO_ID, 8.0, 8.5, 8.3);
-
-        // 2. Năm học 2024-2025
-        createClassAndEnrollment(classes, enrollments,
-                "CL_MKT_01", "Marketing căn bản", "ECO103", "GV_ECO_01",
-                "HK1_2024_2025", "2024-2025", STUDENT_ECO_ID, 9.0, 9.0, 9.0);
-
-        createClassAndEnrollment(classes, enrollments,
-                "CL_LOG_01", "Quản trị Logistics", "ECO104", "GV_ECO_01",
-                "HK2_2024_2025", "2024-2025", STUDENT_ECO_ID, 6.5, 7.5, 7.0);
-
-        // 3. Năm học 2025-2026
-        createClassAndEnrollment(classes, enrollments,
-                "CL_LAW_01", "Luật kinh doanh", "ECO105", "GV_ECO_01",
-                "HK1_2025_2026", "2025-2026", STUDENT_ECO_ID, 7.0, null, null);
+        // SV Kinh Tế (22110177)
+        createClassAndEnrollment(classes, enrollments, "CL_MACRO_01", "Kinh tế vĩ mô", "ECO101", "GV_ECO_01", "HK1_2023_2024", "2023-2024", STUDENT_ECO_ID, 7.5, 8.0, 7.8);
+        createClassAndEnrollment(classes, enrollments, "CL_MICRO_02", "Kinh tế vi mô", "ECO102", "GV_ECO_01", "HK2_2023_2024", "2023-2024", STUDENT_ECO_ID, 8.0, 8.5, 8.3);
+        createClassAndEnrollment(classes, enrollments, "CL_MKT_01", "Marketing căn bản", "ECO103", "GV_ECO_01", "HK1_2024_2025", "2024-2025", STUDENT_ECO_ID, 9.0, 9.0, 9.0);
+        createClassAndEnrollment(classes, enrollments, "CL_LOG_01", "Quản trị Logistics", "ECO104", "GV_ECO_01", "HK2_2024_2025", "2024-2025", STUDENT_ECO_ID, 6.5, 7.5, 7.0);
+        createClassAndEnrollment(classes, enrollments, "CL_LAW_01", "Luật kinh doanh", "ECO105", "GV_ECO_01", "HK1_2025_2026", "2025-2026", STUDENT_ECO_ID, 7.0, null, null);
 
         courseClassRepository.saveAll(classes);
         enrollmentRepository.saveAll(enrollments);
-
-        System.out.println("   -> Đã tạo: 10 Lớp học & Điểm số (Trải dài 2023-2026)");
-        log.info("-> Đã tạo: 10 Lớp học & Điểm số (Trải dài 2023-2026)");
+        System.out.println("   -> Đã tạo: 10 Lớp học (Tên GV chuẩn + Giờ học chuẩn)");
     }
 
     private void createClassAndEnrollment(List<CourseClass> classes, List<StudentEnrollment> enrollments,
@@ -362,20 +207,32 @@ public class DatabaseInitializer implements CommandLineRunner {
                                           String semester, String year, String studentId,
                                           Double midterm, Double finalScore, Double total) {
 
-        int dayRandom = new Random().nextInt(5) + 2; // Random 2 -> 6
+        int dayRandom = new Random().nextInt(5) + 2;
         String dayOfWeek = getDayName(dayRandom);
+
+        // Random Sáng (1) hoặc Chiều (7)
+        boolean isMorning = new Random().nextBoolean();
+        int startPeriod = isMorning ? 1 : 7;
+        int endPeriod = startPeriod + 2;
 
         TimeSlot slot = TimeSlot.builder()
                 .dayOfWeek(dayOfWeek)
-                .startPeriod(1).endPeriod(3)
+                .startPeriod(startPeriod)
+                .endPeriod(endPeriod)
                 .room("H1-" + (100 + new Random().nextInt(10)))
                 .campus("Cơ sở " + (courseId.startsWith("INT") ? "1" : "2"))
                 .build();
 
+        // TỰ ĐỘNG ĐIỀN GIỜ
+        TimeUtils.enrichTime(slot);
+
+        // MAP TÊN GIẢNG VIÊN CHUẨN XÁC
+        String lecturerName = getLecturerName(lecturerId);
+
         CourseClass cClass = CourseClass.builder()
                 .id(classId).name(className)
                 .courseId(courseId).courseName(className)
-                .lecturerId(lecturerId).lecturerName(lecturerId.equals("GV_IT_01") ? "TS. Nguyễn Văn Code" : "GV Bộ Môn")
+                .lecturerId(lecturerId).lecturerName(lecturerName) // <--- Đã sửa chỗ này, không còn GV Bộ Môn
                 .semester(semester).academicYear(year)
                 .studentIds(Set.of(studentId))
                 .timeSlots(Set.of(slot))
@@ -386,11 +243,21 @@ public class DatabaseInitializer implements CommandLineRunner {
                 .studentId(studentId)
                 .courseClassId(classId)
                 .semester(semester).academicYear(year)
-                .midtermScore(midterm)
-                .finalScore(finalScore)
-                .totalScore(total)
+                .midtermScore(midterm).finalScore(finalScore).totalScore(total)
                 .build();
         enrollments.add(enrollment);
+    }
+
+    // --- HELPER MỚI: Map ID sang Tên Giảng Viên ---
+    private String getLecturerName(String lecturerId) {
+        return switch (lecturerId) {
+            case "GV_IT_01" -> "TS. Nguyễn Văn Code";
+            case "GV_IT_02" -> "PGS. Trần Thị Data";
+            case "GV_IT_03" -> "ThS. Lê Văn Job";
+            case "GV_ECO_01" -> "TS. Phạm Kinh Tế";
+            case "GV_ADMIN" -> "Thầy Quản Lý";
+            default -> "Giảng Viên Thỉnh Giảng";
+        };
     }
 
     private String getDayName(int day) {
